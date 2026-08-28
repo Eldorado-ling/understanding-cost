@@ -1,8 +1,8 @@
 # 理解成本学习导航
 
-**当前版本：v4.0.0**
+**当前版本：v0.1.1**
 
-![理解成本学习导航 v4.0.0 执行流程图，带 ELD 水印](review-assets/understanding-cost-flow-v4.0.0.png)
+![理解成本学习导航 v0.1.1 执行流程图，带 ELD 水印](review-assets/understanding-cost-flow-v0.1.1.png)
 
 同一个知识点，不同的人缺少的前置知识并不相同。本 Skill 会先了解你已经会什么，再规划学习顺序，用尽量容易理解的方式分步教学。
 

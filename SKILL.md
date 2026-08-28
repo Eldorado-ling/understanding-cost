@@ -3,24 +3,25 @@ name: understanding-cost
 description: 根据学习者已有知识规划低理解成本路径，分步讲解并验证掌握。适用于学习新知识、补前置、梳理领域地图或继续既有学习计划。
 license: Proprietary - All Rights Reserved
 metadata:
-  version: "4.0.0"
+  version: "0.1.1"
   owner: ELD
 ---
 
 # 理解成本学习导航
 
-> **当前发布版本：v4.0.0 · Copyright © 2026 ELD · All Rights Reserved**
+> **当前发布版本：v0.1.1 · Copyright © 2026 ELD · All Rights Reserved**
 >
 > 本 Skill 不是开源软件。经 ELD 授权的接收者仅可为个人、非商业目的下载、安装、运行并在自己的 Agent 中测试；未经 ELD 事先书面许可，禁止商业使用、二次发布、转载、转发、镜像、重新打包、借给或提供给第三方、出租、出售、再许可，以及传播修改版或衍生版。即使不收费，也禁止将本 Skill 转发或借用给未经授权的第三方。任何获准副本都必须完整保留本声明和所有 ELD 水印。详细条款见 [LICENSE](LICENSE)。
 
-## 当前执行流程图（v4.0.0）
+## 当前执行流程图（v0.1.1）
 
-![理解成本学习导航 v4.0.0 执行流程图，带 ELD 水印](review-assets/understanding-cost-flow-v4.0.0.png)
+![理解成本学习导航 v0.1.1 执行流程图，带 ELD 水印](review-assets/understanding-cost-flow-v0.1.1.png)
 
-本图不是说明性插图，而是当前版本的执行合同。源文件为 [review-assets/understanding-cost-flow-v4.0.0.mmd](review-assets/understanding-cost-flow-v4.0.0.mmd)；流程图、SKILL、引用文档、数据模型、脚本、Demo 与测试必须表达同一组状态、闸门、回路和回写语义。
+本图不是说明性插图，而是当前版本的执行合同。源文件为 [review-assets/understanding-cost-flow-v0.1.1.mmd](review-assets/understanding-cost-flow-v0.1.1.mmd)；流程图、SKILL、引用文档、数据模型、脚本、Demo 与测试必须表达同一组状态、闸门、回路和回写语义。
 
 ## 版本发布合同
 
+- 默认只递增补丁版本：`x.y.z → x.y.(z+1)`。只有版权所有者明确要求新增次版本或主版本时，才可递增 `y` 或 `x`；不得因为内部流程、脚本或流程图有较大改动就自行跳到大版本。
 - 每次修改 `metadata.version`，都必须在同一次变更中生成对应完整版本号的新 `.mmd` 和带 **ELD** 水印的 `.png`，并把上方图片与源文件链接切换到该新版本；禁止复用旧版本图片冒充新流程。
 - 发布图必须通过 `scripts/render_flowchart.py` 生成，保留重复斜向 `ELD` 水印和右下角版权标记；缺图、无水印、版本号不一致或图片仍指向旧版本时，该版本不得发布。
 - 每次版本更新都必须同步检查 `references/workflow.md`、`references/maintainer-guide.md`、生产脚本、Demo 和回归测试。任何一处与流程图不一致，该版本视为未完成。
@@ -57,7 +58,7 @@ metadata:
 
 ## 核心工作流
 
-执行本节前，先读取 [references/workflow.md](references/workflow.md)，遵守其中的 v4.0.0 执行合同、字段消费者门、mastery contract、双核心闭环、主线/支线和停止规则。[review-assets/understanding-cost-flow-v4.0.0.mmd](review-assets/understanding-cost-flow-v4.0.0.mmd) 是本版本的规范流程图源文件；SKILL、引用文档、数据模型、脚本、Demo 与测试必须实现同一组状态和闸门。修改任一流程节点时，必须在同一版本中同步其余实现并通过对照测试，不能只改图或只改文字。不得自行交换“已有证据或 unknown 边界 → 可执行候选 → 硬资格 → 路线层级 → 动作绑定 → 成本 Pareto → 用户明确成本优先维度 → Focus → 发行账本 → 按已签发动作诊断或教学 → 活动与真实资源解析 → 教学防泄漏 → 教学内容签发 → 独立验证 → 原子回写”的顺序。
+执行本节前，先读取 [references/workflow.md](references/workflow.md)，遵守其中的 v0.1.1 执行合同、字段消费者门、mastery contract、双核心闭环、主线/支线和停止规则。[review-assets/understanding-cost-flow-v0.1.1.mmd](review-assets/understanding-cost-flow-v0.1.1.mmd) 是本版本的规范流程图源文件；SKILL、引用文档、数据模型、脚本、Demo 与测试必须实现同一组状态和闸门。修改任一流程节点时，必须在同一版本中同步其余实现并通过对照测试，不能只改图或只改文字。不得自行交换“已有证据或 unknown 边界 → 可执行候选 → 硬资格 → 路线层级 → 动作绑定 → 成本 Pareto → 用户明确成本优先维度 → Focus → 发行账本 → 按已签发动作诊断或教学 → 活动与真实资源解析 → 教学防泄漏 → 教学内容签发 → 独立验证 → 原子回写”的顺序。
 
 所有会读取后再改写 Vault 的生产入口，必须在同一 canonical Vault 的跨进程独占事务锁内完成“读取 → CAS/资格校验 → 全部写入 → 完整校验 → 必要回滚”；不能只给单个文件加锁。锁争用或超时必须在读取后写入前失败并保持 Vault 零变化，失败回滚也只能发生在仍持锁的事务内，不能覆盖另一进程的成功结果。锁文件位于 Vault 外，只承担互斥，不保存学习数据。`retention_schedule` 与 `verification_open` 还必须满足精确 metadata 白名单、除自身指纹外的全 metadata 指纹和固定 canonical 正文；出现额外字段、题面、答案或正文漂移即拒绝。
 

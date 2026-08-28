@@ -17,7 +17,7 @@ py -3 -X utf8 scripts\vault_tool.py schedule-retention --vault demo-vault --reco
 py -3 -X utf8 scripts\vault_tool.py open-delayed-verification --vault demo-vault --state-id <state-id>
 py -3 -X utf8 scripts\vault_tool.py inspect-cone --vault demo-vault
 py -3 -X utf8 scripts\self_test.py
-py -3 -X utf8 scripts\render_flowchart.py --input review-assets\understanding-cost-flow-v4.0.0.mmd --output review-assets\understanding-cost-flow-v4.0.0.png --config review-assets\puppeteer-config.json --scale 3
+py -3 -X utf8 scripts\render_flowchart.py --input review-assets\understanding-cost-flow-v0.1.1.mmd --output review-assets\understanding-cost-flow-v0.1.1.png --config review-assets\puppeteer-config.json --scale 3
 py -3 -X utf8 scripts\check_release.py --root .
 ```
 
@@ -31,7 +31,7 @@ macOS / Linux 使用 `python3`。预期 Vault 校验为 `status: ok`、`error_co
 
 ## 流程图与协议同步
 
-[文字协议](workflow.md) 与 [v4.0.0 流程图源文件](../review-assets/understanding-cost-flow-v4.0.0.mmd) 是同一执行合同的文字版和图形版；[带 ELD 水印的审阅 PNG](../review-assets/understanding-cost-flow-v4.0.0.png) 必须由 `scripts/render_flowchart.py` 生成并嵌入 [SKILL.md](../SKILL.md)。不存在“实现优先”或“图只供参考”的关系。修改任一方时必须在同一变更中同步另一方，并运行以下一致性检查；任一状态、门、回路、回写语义、版本号或水印不一致时，该版本不得交付：
+[文字协议](workflow.md) 与 [v0.1.1 流程图源文件](../review-assets/understanding-cost-flow-v0.1.1.mmd) 是同一执行合同的文字版和图形版；[带 ELD 水印的审阅 PNG](../review-assets/understanding-cost-flow-v0.1.1.png) 必须由 `scripts/render_flowchart.py` 生成并嵌入 [SKILL.md](../SKILL.md)。不存在“实现优先”或“图只供参考”的关系。修改任一方时必须在同一变更中同步另一方，并运行以下一致性检查；任一状态、门、回路、回写语义、版本号或水印不一致时，该版本不得交付：
 
 - 每个计算或保存字段都有明确消费者；无消费者分支不得进入提交；
 - 候选顺序固定为硬资格 → 路线层级 → 动作绑定 → 成本 Pareto → 用户明确成本优先维度（Demo 词典序）→ Focus；
@@ -52,7 +52,7 @@ macOS / Linux 使用 `python3`。预期 Vault 校验为 `status: ok`、`error_co
 - retention 先追加 schedule receipt，due 开题前再追加或幂等复用 open receipt；两类 receipt 必须 exact metadata allowlist + full-metadata fingerprint + canonical body，open 不得保存题面/答案/`user_task`。state 只指当前 schedule，历史 evidence 按自己的 open→schedule→issuance 校验。保持失败必须经过更新且合格的新 verification baseline、新 task/binding 和 superseding schedule，不能停在永久 pending；
 - `issue-route.expected_chain_head` 与 `schedule-retention.expected_state_evaluated_at` 是 CAS 前置条件；漂移时必须零写入。所有生产 writer 在同一外部跨进程 Vault 锁内完成 read/CAS/write/validate/rollback，锁超时零写入；所有写后失败都要求仍持锁的全树 byte-exact 回滚。
 
-每次发布版本都必须创建使用完整版本号命名的新 `.mmd + .png`，更新 `SKILL.md` 中的内联图片，并保留 `ELD` 水印与版权标记。流程图通过审阅后，才允许同步发布包或推送远端；缺少版权所有者对该次外部发布的明确授权时，只能停留在本地。
+每次发布版本都必须创建使用完整版本号命名的新 `.mmd + .png`，更新 `SKILL.md` 中的内联图片，并保留 `ELD` 水印与版权标记。默认只递增补丁号；次版本和主版本必须由版权所有者明确指定，不能由维护者自行判断。流程图通过审阅后，才允许同步发布包或推送远端；缺少版权所有者对该次外部发布的明确授权时，只能停留在本地。
 
 ## 路由恢复
 

@@ -165,7 +165,7 @@ C = (diagnosis, prerequisites, core_learning,
 - `supported_by` 按 evidence ID 去重；重复链接同一条证据不能增加最低证据数。
 - 当前合同下较新的失败证据优先于较旧的通过证据；先后顺序必须把带时区 ISO 时间归一为 UTC 绝对时刻再比较，不能按字符串排序。只有时间上更新、同范围且重新满足合同的行为证据才能恢复 `met`。
 - `observed_at`、`teaching_delivery.issued_at`、`state.evaluated_at` 与 `intervention.resolved_at` 不得位于当前校验时刻之后（只允许实现声明的小时钟偏差）；合同、诊断快照、边界与 open-verification 都以明确 `as_of` 过滤未来记录。state 的 `evaluated_at` 不得早于它引用的最新有效 evidence。
-- 每条验证证据分别记录实际被资格门、合同、反馈或活动选择读取的 `response_correct`、`explanation_quality`、`assistance_level` 与 `observed_at`；答案正确但理由错误时标为 `conflicted` 或 misconception。Demo v4.0.0 不持久化尚无执行下游的 `representation` 或 `learner_confidence`；未来只有先实现明确消费者后才能新增相应字段 binding。
+- 每条验证证据分别记录实际被资格门、合同、反馈或活动选择读取的 `response_correct`、`explanation_quality`、`assistance_level` 与 `observed_at`；答案正确但理由错误时标为 `conflicted` 或 misconception。Demo v0.1.1 不持久化尚无执行下游的 `representation` 或 `learner_confidence`；未来只有先实现明确消费者后才能新增相应字段 binding。
 - `immediate_performance`、数值型 `near_transfer` 与数值型 `delayed_retention` 必须在 0..1；自报努力采用 1..7 或 `not_collected`。`demonstrates` 不能替代观测字段：声明 explanation 时，合格 pass 证据必须同时有 `explanation_quality: pass`；声明迁移或保持时必须有相应合法数值与延迟天数。
 - 状态快照记录 `as_of`、`last_independent_evidence_at`、`valid_context`、`immediate_contract_status`、`contract_status` 与 `retention_status`；这些时间必须从其所引用 evidence 的时间推导。超出合同时间跨度或出现新冲突时，保留旧证据，但将当前结论降为 provisional 并局部复测。
 - 跨领域证据只能生成 `transfer_hypothesis`，不得直接更新目标领域 mastery。
