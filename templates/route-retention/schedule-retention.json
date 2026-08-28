@@ -1,0 +1,7 @@
+{
+  "state_id": "$STATE_ID",
+  "baseline_evidence_id": "$QUALIFIED_IMMEDIATE_VERIFICATION_EVIDENCE_ID",
+  "route_binding_id": "$ISSUE_ROUTE_RETENTION_BINDING_ID",
+  "not_before": null,
+  "expected_state_evaluated_at": "$CURRENT_STATE_EVALUATED_AT"
+}

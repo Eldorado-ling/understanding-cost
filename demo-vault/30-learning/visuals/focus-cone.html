@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 内部 Focus Cone 决策检查</title>
+<style>
+  :root { color-scheme: light dark; --bg: light-dark(#f7f7f4,#171817); --surface: light-dark(#ffffff,#222422); --fg: light-dark(#20221f,#f2f3ef); --muted: light-dark(#686d66,#aeb3ab); --line: light-dark(#cfd3cb,#4c514b); --accent: light-dark(#236a5d,#6bc5ad); --mastered: light-dark(#377b4b,#70c482); --partial: light-dark(#a26a13,#e6ad4f); --unknown: light-dark(#737973,#a9afa8); --none: light-dark(#9d4242,#e38282); --focus: light-dark(#275eaa,#74a9ef); }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px; background: var(--bg); color: var(--fg); font-family: ui-sans-serif, system-ui, "Microsoft YaHei", sans-serif; overflow-wrap: anywhere; }
+  main { max-width: 1080px; min-width: 0; margin: 0 auto; }
+  h1 { font-size: clamp(1.35rem, 3vw, 2rem); font-weight: 600; margin: 0 0 6px; overflow-wrap: anywhere; }
+  .subtitle { margin: 0 0 18px; color: var(--muted); }
+  .controls { display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)); gap: 14px; margin-bottom: 14px; }
+  label { display: grid; min-width: 0; gap: 5px; font-size: .9rem; }
+  input[type="range"] { width: 100%; min-width: 0; accent-color: var(--accent); }
+  .stage { position: relative; min-height: 570px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  svg { width: 100%; height: 570px; display: block; cursor: grab; touch-action: none; }
+  svg:active { cursor: grabbing; }
+  .wire { fill: none; stroke: var(--line); stroke-width: 1; opacity: .65; vector-effect: non-scaling-stroke; }
+  .edge { stroke: var(--line); stroke-width: 1.2; opacity: .62; vector-effect: non-scaling-stroke; }
+  .node circle { stroke: var(--surface); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .node.mastered circle { fill: var(--mastered); }
+  .node.partial circle { fill: var(--partial); }
+  .node.unknown circle { fill: var(--unknown); }
+  .node.none circle { fill: var(--none); }
+  .node.candidate circle { stroke: var(--focus); stroke-width: 4; }
+  .node text { fill: var(--fg); font-size: 12px; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+  .axis-label { fill: var(--muted); font-size: 12px; }
+  .detail { position: absolute; left: 14px; right: 14px; bottom: 14px; padding: 10px 12px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); border-radius: 10px; }
+  .detail strong { font-weight: 600; }
+  .legend { display: flex; max-width: 100%; gap: 16px; flex-wrap: wrap; margin-top: 12px; color: var(--muted); font-size: .88rem; }
+  .legend span { min-width: 0; white-space: normal; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 50%; background: var(--unknown); }
+  .legend .m::before { background: var(--mastered); } .legend .p::before { background: var(--partial); } .legend .n::before { background: var(--none); } .legend .u::before { background: var(--unknown); } .legend .c::before { background: var(--focus); box-shadow: inset 0 0 0 3px var(--surface); outline: 2px solid var(--focus); }
+  .note, .unranked { margin-top: 12px; color: var(--muted); font-size: .88rem; }
+  @media (max-width: 620px) { body { padding: 14px; } .controls { grid-template-columns: 1fr; } .stage { min-height: 470px; } svg { height: 470px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="coneHeading">Agent 内部 Focus Cone</h1>
+  <p class="subtitle">audience=agent_internal · private=true · authoritative=false · causal_status=not_established</p>
+  <section class="controls" aria-label="仅用于检查视图的 Focus 权重">
+    <label>w_goal_relevance <output id="goalOut">40%</output><input id="goal" type="range" min="0" max="100" value="40"></label>
+    <label>w_interest_evidence <output id="interestOut">30%</output><input id="interest" type="range" min="0" max="100" value="30"></label>
+    <label>w_readiness <output id="readinessOut">30%</output><input id="readiness" type="range" min="0" max="100" value="30"></label>
+  </section>
+  <section class="stage">
+    <svg id="cone" viewBox="0 0 960 570" role="img" aria-labelledby="coneTitle coneDesc">
+      <title id="coneTitle">Agent 内部启发式 Focus 坐标检查</title>
+      <desc id="coneDesc">节点高度是可调检查权重产生的启发式坐标。它不是掌握概率、能力值、候选资格或教学效果的因果估计。</desc>
+      <g id="wire"></g><g id="edges"></g><g id="nodes"></g>
+      <text class="axis-label" x="24" y="28">higher display_focus_z</text>
+      <text class="axis-label" x="24" y="548">lower display_focus_z</text>
+    </svg>
+    <div class="detail" id="detail" aria-live="polite">select concept_id → inspect cached score, state scope, selection_status, routing_action, reason_codes</div>
+  </section>
+  <div class="legend" aria-label="图例"><span class="m">mastery=mastered</span><span class="p">mastery=partial</span><span class="n">mastery=none</span><span class="u">mastery=unknown</span><span class="c">selection_status=selected</span></div>
+  <div class="unranked" id="unranked"></div>
+  <p class="note">display_only=true；调整权重不修改快照、状态、路线或候选。普通教学输出不得包含本视图字段。</p>
+</main>
+<script>
+const data = {"schema": "uc-demo/0.2", "view_kind": "agent_internal_focus_inspection", "audience": "agent_internal", "user_visibility": "hidden_by_default", "privacy": "private", "derived": true, "rebuildable": true, "authoritative": false, "score_kind": "heuristic_cone_coordinate", "causal_status": "not_established", "decision_role": "experimental_priority", "title": "Agent 内部 Focus Cone：理解递归为什么会导致栈溢出", "learner_id": "demo-a17", "goal_id": "goal-demo-a17-recursion", "candidate_id": "kc-python-call-stack", "candidate_source": "active_route_checkpoint", "candidate_status": "selected", "selection_basis": "active_route", "resolved_teaching": {"activity_id": null, "activity": null, "profile_refs": [], "profile_level": null, "profile_usage": null, "route_binding_id": null, "context_key": null}, "nodes": [{"id": "kc-python-base-case", "title": "递归终止条件", "x": 0.52, "y": -0.28, "goal": 0.84, "goal_status": "derived", "interest": 0.68, "interest_status": "derived", "readiness": 0.42, "readiness_status": "derived", "focus_z": 0.666, "ranking_status": "complete", "focus_weights": {"goal": 0.4, "interest": 0.3, "readiness": 0.3}, "focus_model": "focus-cone-agent-v0.3", "score_kind": "heuristic_cone_coordinate", "causal_status": "not_established", "calculated_at": "2026-08-28T03:24:07Z", "snapshot_id": "focus-demo-a17-goal-demo-a17-recursion-kc-python-base-case-20260828t032407z", "state_id": "ks-demo-a17-kc-python-base-case", "contract_id": "mc-python-base-case", "contract_version": 1, "input_confidence": {"goal_relevance": "high", "interest_evidence": "low", "readiness": "medium"}, "mastery": "unknown", "boundary": "blocked", "confidence": "low", "candidate": false, "in_target_subgraph": true, "eligible_teaching_candidate": false, "selection_status": "ineligible", "selection_basis": "not_selected", "routing_action": "defer_blocked", "reason_codes": ["prerequisite_gap"], "next_step_id": null, "activity_id": null, "activity": null, "probe_id": null, "verification_task_id": null, "profile_refs": [], "profile_level": null, "profile_usage": null, "route_binding_id": null, "context_key": null, "blocking_prerequisite_ids": ["kc-python-recursion"]}, {"id": "kc-python-call-stack", "title": "调用栈", "x": -0.18, "y": -0.42, "goal": 0.92, "goal_status": "derived", "interest": 0.82, "interest_status": "derived", "readiness": 0.9, "readiness_status": "derived", "focus_z": 0.884, "ranking_status": "complete", "focus_weights": {"goal": 0.4, "interest": 0.3, "readiness": 0.3}, "focus_model": "focus-cone-agent-v0.3", "score_kind": "heuristic_cone_coordinate", "causal_status": "not_established", "calculated_at": "2026-08-28T03:24:07Z", "snapshot_id": "focus-demo-a17-goal-demo-a17-recursion-kc-python-call-stack-20260828t032407z", "state_id": "ks-demo-a17-kc-python-call-stack", "contract_id": "mc-python-call-stack", "contract_version": 1, "input_confidence": {"goal_relevance": "high", "interest_evidence": "low", "readiness": "medium"}, "mastery": "unknown", "boundary": "outer_fringe", "confidence": "low", "candidate": true, "in_target_subgraph": true, "eligible_teaching_candidate": true, "selection_status": "selected", "selection_basis": "active_route", "routing_action": "diagnose_now", "reason_codes": ["active_route_checkpoint", "goal_required", "prerequisites_satisfied", "probe_available"], "next_step_id": "probe-python-call-stack-faded-v1", "activity_id": null, "activity": null, "probe_id": "probe-python-call-stack-faded-v1", "verification_task_id": null, "profile_refs": [], "profile_level": null, "profile_usage": null, "route_binding_id": null, "context_key": null, "blocking_prerequisite_ids": []}, {"id": "kc-python-function", "title": "函数调用", "x": -0.72, "y": -0.18, "goal": 0.62, "goal_status": "derived", "interest": 0.46, "interest_status": "derived", "readiness": 1.0, "readiness_status": "derived", "focus_z": 0.686, "ranking_status": "complete", "focus_weights": {"goal": 0.4, "interest": 0.3, "readiness": 0.3}, "focus_model": "focus-cone-agent-v0.3", "score_kind": "heuristic_cone_coordinate", "causal_status": "not_established", "calculated_at": "2026-08-28T03:24:07Z", "snapshot_id": "focus-demo-a17-goal-demo-a17-recursion-kc-python-function-20260828t032407z", "state_id": "ks-demo-a17-kc-python-function", "contract_id": "mc-python-function-baseline", "contract_version": 1, "input_confidence": {"goal_relevance": "high", "interest_evidence": "low", "readiness": "medium"}, "mastery": "mastered", "boundary": "interior", "confidence": "high", "candidate": false, "in_target_subgraph": true, "eligible_teaching_candidate": false, "selection_status": "ineligible", "selection_basis": "not_selected", "routing_action": "exclude_mastered", "reason_codes": ["mastery_contract_met"], "next_step_id": null, "activity_id": null, "activity": null, "probe_id": null, "verification_task_id": null, "profile_refs": [], "profile_level": null, "profile_usage": null, "route_binding_id": null, "context_key": null, "blocking_prerequisite_ids": []}, {"id": "kc-python-iteration", "title": "循环与迭代", "x": -0.52, "y": 0.62, "goal": 0.45, "goal_status": "derived", "interest": 0.38, "interest_status": "derived", "readiness": 1.0, "readiness_status": "derived", "focus_z": 0.594, "ranking_status": "complete", "focus_weights": {"goal": 0.4, "interest": 0.3, "readiness": 0.3}, "focus_model": "focus-cone-agent-v0.3", "score_kind": "heuristic_cone_coordinate", "causal_status": "not_established", "calculated_at": "2026-08-28T03:24:07Z", "snapshot_id": "focus-demo-a17-goal-demo-a17-recursion-kc-python-iteration-20260828t032407z", "state_id": "ks-demo-a17-kc-python-iteration", "contract_id": "mc-python-iteration-baseline", "contract_version": 1, "input_confidence": {"goal_relevance": "high", "interest_evidence": "low", "readiness": "medium"}, "mastery": "mastered", "boundary": "inner_fringe", "confidence": "high", "candidate": false, "in_target_subgraph": false, "eligible_teaching_candidate": false, "selection_status": "ineligible", "selection_basis": "not_selected", "routing_action": "defer_unmodeled", "reason_codes": ["outside_goal_subgraph"], "next_step_id": null, "activity_id": null, "activity": null, "probe_id": null, "verification_task_id": null, "profile_refs": [], "profile_level": null, "profile_usage": null, "route_binding_id": null, "context_key": null, "blocking_prerequisite_ids": []}, {"id": "kc-python-memoization", "title": "记忆化", "x": 0.38, "y": 0.78, "goal": 0.24, "goal_status": "derived", "interest": 0.3, "interest_status": "derived", "readiness": 0.3, "readiness_status": "derived", "focus_z": 0.276, "ranking_status": "complete", "focus_weights": {"goal": 0.4, "interest": 0.3, "readiness": 0.3}, "focus_model": "focus-cone-agent-v0.3", "score_kind": "heuristic_cone_coordinate", "causal_status": "not_established", "calculated_at": "2026-08-28T03:24:07Z", "snapshot_id": "focus-demo-a17-goal-demo-a17-recursion-kc-python-memoization-20260828t032407z", "state_id": "ks-demo-a17-kc-python-memoization", "contract_id": "mc-python-memoization", "contract_version": 1, "input_confidence": {"goal_relevance": "high", "interest_evidence": "low", "readiness": "medium"}, "mastery": "unknown", "boundary": "blocked", "confidence": "low", "candidate": false, "in_target_subgraph": false, "eligible_teaching_candidate": false, "selection_status": "ineligible", "selection_basis": "not_selected", "routing_action": "defer_unmodeled", "reason_codes": ["outside_goal_subgraph"], "next_step_id": null, "activity_id": null, "activity": null, "probe_id": null, "verification_task_id": null, "profile_refs": [], "profile_level": null, "profile_usage": null, "route_binding_id": null, "context_key": null, "blocking_prerequisite_ids": ["kc-python-recursion"]}, {"id": "kc-python-recursion", "title": "递归", "x": 0.12, "y": 0.08, "goal": 0.98, "goal_status": "derived", "interest": 0.95, "interest_status": "derived", "readiness": 0.78, "readiness_status": "derived", "focus_z": 0.911, "ranking_status": "complete", "focus_weights": {"goal": 0.4, "interest": 0.3, "readiness": 0.3}, "focus_model": "focus-cone-agent-v0.3", "score_kind": "heuristic_cone_coordinate", "causal_status": "not_established", "calculated_at": "2026-08-28T03:24:07Z", "snapshot_id": "focus-demo-a17-goal-demo-a17-recursion-kc-python-recursion-20260828t032407z", "state_id": "ks-demo-a17-kc-python-recursion", "contract_id": "mc-python-recursion", "contract_version": 1, "input_confidence": {"goal_relevance": "high", "interest_evidence": "low", "readiness": "medium"}, "mastery": "none", "boundary": "blocked", "confidence": "medium", "candidate": false, "in_target_subgraph": true, "eligible_teaching_candidate": false, "selection_status": "ineligible", "selection_basis": "not_selected", "routing_action": "defer_blocked", "reason_codes": ["prerequisite_gap"], "next_step_id": null, "activity_id": null, "activity": null, "probe_id": null, "verification_task_id": null, "profile_refs": [], "profile_level": null, "profile_usage": null, "route_binding_id": null, "context_key": null, "blocking_prerequisite_ids": ["kc-python-call-stack"]}, {"id": "kc-python-stack-overflow", "title": "栈溢出", "x": 0.72, "y": 0.32, "goal": 1.0, "goal_status": "derived", "interest": 0.9, "interest_status": "derived", "readiness": 0.36, "readiness_status": "derived", "focus_z": 0.778, "ranking_status": "complete", "focus_weights": {"goal": 0.4, "interest": 0.3, "readiness": 0.3}, "focus_model": "focus-cone-agent-v0.3", "score_kind": "heuristic_cone_coordinate", "causal_status": "not_established", "calculated_at": "2026-08-28T03:24:07Z", "snapshot_id": "focus-demo-a17-goal-demo-a17-recursion-kc-python-stack-overflow-20260828t032407z", "state_id": "ks-demo-a17-kc-python-stack-overflow", "contract_id": "mc-python-stack-overflow", "contract_version": 1, "input_confidence": {"goal_relevance": "high", "interest_evidence": "low", "readiness": "medium"}, "mastery": "unknown", "boundary": "blocked", "confidence": "low", "candidate": false, "in_target_subgraph": true, "eligible_teaching_candidate": false, "selection_status": "ineligible", "selection_basis": "not_selected", "routing_action": "defer_blocked", "reason_codes": ["prerequisite_gap"], "next_step_id": null, "activity_id": null, "activity": null, "probe_id": null, "verification_task_id": null, "profile_refs": [], "profile_level": null, "profile_usage": null, "route_binding_id": null, "context_key": null, "blocking_prerequisite_ids": ["kc-python-call-stack", "kc-python-recursion"]}], "edges": [{"source": "kc-python-base-case", "target": "kc-python-recursion", "type": "requires"}, {"source": "kc-python-base-case", "target": "kc-python-recursion", "type": "part_of"}, {"source": "kc-python-call-stack", "target": "kc-python-function", "type": "requires"}, {"source": "kc-python-call-stack", "target": "kc-python-stack-overflow", "type": "related_to"}, {"source": "kc-python-function", "target": "kc-python-call-stack", "type": "related_to"}, {"source": "kc-python-iteration", "target": "kc-python-recursion", "type": "contrasts_with"}, {"source": "kc-python-memoization", "target": "kc-python-recursion", "type": "requires"}, {"source": "kc-python-recursion", "target": "kc-python-function", "type": "requires"}, {"source": "kc-python-recursion", "target": "kc-python-call-stack", "type": "requires"}, {"source": "kc-python-recursion", "target": "kc-python-iteration", "type": "contrasts_with"}, {"source": "kc-python-stack-overflow", "target": "kc-python-call-stack", "type": "requires"}, {"source": "kc-python-stack-overflow", "target": "kc-python-recursion", "type": "requires"}]};
+document.getElementById('coneHeading').textContent = data.title;
+const svg = document.getElementById('cone');
+const wireGroup = document.getElementById('wire');
+const edgeGroup = document.getElementById('edges');
+const nodeGroup = document.getElementById('nodes');
+const detail = document.getElementById('detail');
+const unranked = document.getElementById('unranked');
+const controls = ['goal','interest','readiness'].map(id => document.getElementById(id));
+let yaw = -0.45, pitch = 0.86, dragging = false, lastX = 0, lastY = 0;
+const byId = new Map(data.nodes.map(node => [node.id, node]));
+const ns = 'http://www.w3.org/2000/svg';
+
+function weights() {
+  const raw = controls.map(control => Number(control.value));
+  const total = raw.reduce((sum, value) => sum + value, 0) || 1;
+  controls.forEach((control, index) => document.getElementById(control.id + 'Out').value = Math.round(raw[index] / total * 100) + '%');
+  return { goal: raw[0] / total, interest: raw[1] / total, readiness: raw[2] / total };
+}
+
+function focus(node, w) {
+  if (node.ranking_status !== 'complete' || ![node.goal,node.interest,node.readiness].every(Number.isFinite)) return null;
+  return node.goal*w.goal + node.interest*w.interest + node.readiness*w.readiness;
+}
+
+function world(node, w) {
+  const z = focus(node, w);
+  if (z === null) return null;
+  const radius = 0.22 + 0.78 * (1-z);
+  return { x: node.x*radius, y: node.y*radius, z: z*1.8-0.9, focus: z };
+}
+
+function project(point) {
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const x1 = point.x*cy - point.y*sy;
+  const y1 = point.x*sy + point.y*cy;
+  const depth = y1*cp - point.z*sp;
+  const vertical = y1*sp + point.z*cp;
+  const scale = 1.05 / (1.55 + depth*0.22);
+  return { x: 480 + x1*330*scale, y: 298 - vertical*260*scale, depth, scale, focus: point.focus };
+}
+
+function svgEl(name, attrs = {}) {
+  const element = document.createElementNS(ns, name);
+  for (const [key, value] of Object.entries(attrs)) element.setAttribute(key, value);
+  return element;
+}
+
+function drawWire() {
+  wireGroup.replaceChildren();
+  for (const level of [0, .25, .5, .75, 1]) {
+    const points = [];
+    const radius = .96*(1-level) + .06;
+    for (let i=0; i<=48; i++) {
+      const angle = i/48*Math.PI*2;
+      points.push(project({x:Math.cos(angle)*radius,y:Math.sin(angle)*radius,z:level*1.8-.9}));
+    }
+    wireGroup.append(svgEl('path',{class:'wire',d:points.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' ')}));
+  }
+  for (let i=0; i<8; i++) {
+    const angle = i/8*Math.PI*2;
+    const a = project({x:Math.cos(angle),y:Math.sin(angle),z:-.9});
+    const b = project({x:0,y:0,z:.9});
+    wireGroup.append(svgEl('line',{class:'wire',x1:a.x,y1:a.y,x2:b.x,y2:b.y}));
+  }
+}
+
+function candidateFor() {
+  return data.candidate_id;
+}
+
+function draw() {
+  const w = weights();
+  drawWire();
+  const ranked = data.nodes.filter(node => focus(node,w) !== null);
+  const omitted = data.nodes.filter(node => focus(node,w) === null);
+  unranked.textContent = omitted.length ? 'unranked_concept_ids=['+omitted.map(node=>node.id).join(', ')+'] · reason=ranking_status_incomplete' : 'unranked_concept_ids=[]';
+  const projected = ranked.map(node => { const worldPoint = world(node,w); return {node,world:worldPoint,screen:project(worldPoint)}; });
+  const candidate = candidateFor();
+  const screens = new Map(projected.map(item => [item.node.id,item.screen]));
+  edgeGroup.replaceChildren();
+  for (const edge of data.edges) {
+    const source = screens.get(edge.source), target = screens.get(edge.target);
+    if (!source || !target) continue;
+    const line = svgEl('line',{class:'edge',x1:source.x,y1:source.y,x2:target.x,y2:target.y});
+    line.append(svgEl('title'));
+    line.firstChild.textContent = edge.type;
+    edgeGroup.append(line);
+  }
+  nodeGroup.replaceChildren();
+  projected.sort((a,b)=>b.screen.depth-a.screen.depth);
+  for (const item of projected) {
+    const node = item.node, screen = item.screen;
+    const group = svgEl('g',{class:'node '+node.mastery+(node.id===candidate?' candidate':''),'data-id':node.id,role:'button',tabindex:'0','aria-label':node.title});
+    const circle = svgEl('circle',{cx:screen.x,cy:screen.y,r:Math.max(8,12*screen.scale)});
+    circle.setAttribute('role','button');
+    circle.setAttribute('aria-label','concept_id '+node.id+'，display_focus_z '+item.world.focus.toFixed(3)+'，selection_status '+node.selection_status);
+    group.append(circle);
+    const label = svgEl('text',{x:screen.x+11,y:screen.y-10}); label.textContent=node.title; group.append(label);
+    const selectNode = () => showDetail(node,item.world.focus,node.id===candidate);
+    group.addEventListener('click',selectNode);
+    group.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selectNode();}});
+    nodeGroup.append(group);
+  }
+}
+
+function showDetail(node,z,isCandidate) {
+  detail.textContent = 'concept_id='+node.id+' | display_focus_z='+z.toFixed(3)+' | cached_focus_z='+String(node.focus_z)+' | mastery='+node.mastery+' | boundary='+node.boundary+' | selection_status='+node.selection_status+' | routing_action='+node.routing_action+' | next_step_id='+String(node.next_step_id)+' | activity_id='+String(node.activity_id)+' | probe_id='+String(node.probe_id)+' | verification_task_id='+String(node.verification_task_id)+' | reason_codes=['+node.reason_codes.join(',')+'] | selected='+String(isCandidate);
+}
+
+controls.forEach(control => control.addEventListener('input', draw));
+svg.addEventListener('pointerdown', event => { dragging=true; lastX=event.clientX; lastY=event.clientY; svg.setPointerCapture(event.pointerId); });
+svg.addEventListener('pointermove', event => { if(!dragging)return; yaw+=(event.clientX-lastX)*.008; pitch=Math.max(.2,Math.min(1.25,pitch+(event.clientY-lastY)*.006)); lastX=event.clientX; lastY=event.clientY; draw(); });
+svg.addEventListener('pointerup', event => { dragging=false; svg.releasePointerCapture(event.pointerId); });
+svg.addEventListener('pointercancel', () => dragging=false);
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,1033 @@
+{
+  "schema": "uc-demo-seed/0.3",
+  "vault": {
+    "id": "vault-demo-python-recursion",
+    "title": "理解成本 Demo：Python 递归",
+    "learner_node_id": "usr-demo-a17",
+    "domain_id": "dom-python",
+    "active_goal_id": "goal-demo-a17-recursion",
+    "last_session_id": "ses-demo-a17-20260826t063000z"
+  },
+  "route_bindings": [
+    {
+      "binding_id": "rb-demo-a17-function-baseline-v1",
+      "learner_id": "demo-a17",
+      "goal_id": "goal-demo-a17-recursion",
+      "concept_id": "kc-python-function",
+      "contract_id": "mc-python-function-baseline",
+      "contract_version": 1,
+      "route_id": "route-python-function-baseline-v1",
+      "route_version": 1,
+      "verification_task_id": "verify-python-function-call-v1",
+      "issued_at": "2026-08-19T05:55:00Z",
+      "immutable": true,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "comparison_context": {
+        "domain": "python",
+        "knowledge_kind": "causal_structure",
+        "target_performance": "explain",
+        "prior_band": "partial",
+        "task_difficulty": "medium"
+      },
+      "issuance_snapshot": {
+        "resources": [
+          {
+            "id": "res-hist-function-contrast-v1",
+            "carrier": "text_hybrid",
+            "supported_activities": ["contrast_cases"],
+            "protocol_version": "text-demo-v0.5",
+            "diagnostic_probe": {
+              "id": "probe-python-function-call-v1",
+              "prompt": "指出函数定义、参数与调用表达式分别在哪里。",
+              "success_criteria": "能区分形参与实参，并指出返回值流向。"
+            },
+            "verification_task": {
+              "id": "verify-python-function-call-v1",
+              "prompt": "给定两个未见函数调用，独立说明实参如何绑定形参以及返回值是什么。",
+              "success_criteria": "A0 下正确说明两次绑定与返回过程。",
+              "protected_answers": ["实参在调用时按位置绑定形参", "返回值交给调用表达式"]
+            },
+            "teaches": ["kc-python-function"],
+            "requires": [],
+            "duration_minutes": 7
+          }
+        ],
+        "intervention": {
+          "id": "int-hist-function-baseline-v1",
+          "route_id": "route-python-function-baseline-v1",
+          "route_version": 1,
+          "goal_id": "goal-demo-a17-recursion",
+          "current_checkpoint": "kc-python-function",
+          "resource_ids": ["res-hist-function-contrast-v1"]
+        }
+      }
+    },
+    {
+      "binding_id": "rb-demo-a17-function-retention-v1",
+      "learner_id": "demo-a17",
+      "goal_id": "goal-demo-a17-recursion",
+      "concept_id": "kc-python-function",
+      "contract_id": "mc-python-function-baseline",
+      "contract_version": 1,
+      "route_id": "route-python-function-retention-v1",
+      "route_version": 1,
+      "verification_task_id": "retain-python-function-call-v1",
+      "issued_at": "2026-08-26T05:55:00Z",
+      "immutable": true,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "comparison_context": {
+        "domain": "python",
+        "knowledge_kind": "causal_structure",
+        "target_performance": "explain",
+        "prior_band": "partial",
+        "task_difficulty": "medium"
+      },
+      "issuance_snapshot": {
+        "resources": [
+          {
+            "id": "res-hist-function-retention-v1",
+            "carrier": "text_hybrid",
+            "supported_activities": ["contrast_cases"],
+            "protocol_version": "text-demo-v0.5",
+            "diagnostic_probe": {
+              "id": "probe-python-function-retention-v1",
+              "prompt": "不看旧例，说明参数进入函数后发生什么。",
+              "success_criteria": "能独立复述参数绑定和返回关系。"
+            },
+            "verification_task": {
+              "id": "retain-python-function-call-v1",
+              "prompt": "比较两个未见函数调用，解释它们的参数传递和返回差异。",
+              "success_criteria": "七天后 A0 下正确解释差异。",
+              "protected_answers": ["参数在调用时绑定", "return 的结果返回调用处"]
+            },
+            "teaches": ["kc-python-function"],
+            "requires": [],
+            "duration_minutes": 4
+          }
+        ],
+        "intervention": {
+          "id": "int-hist-function-retention-v1",
+          "route_id": "route-python-function-retention-v1",
+          "route_version": 1,
+          "goal_id": "goal-demo-a17-recursion",
+          "current_checkpoint": "kc-python-function",
+          "resource_ids": ["res-hist-function-retention-v1"]
+        }
+      }
+    },
+    {
+      "binding_id": "rb-demo-a17-iteration-baseline-v1",
+      "learner_id": "demo-a17",
+      "goal_id": "goal-demo-a17-recursion",
+      "concept_id": "kc-python-iteration",
+      "contract_id": "mc-python-iteration-baseline",
+      "contract_version": 1,
+      "route_id": "route-python-iteration-baseline-v1",
+      "route_version": 1,
+      "verification_task_id": "verify-python-iteration-baseline-v1",
+      "issued_at": "2026-08-19T06:05:00Z",
+      "immutable": true,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "comparison_context": {
+        "domain": "python",
+        "knowledge_kind": "causal_structure",
+        "target_performance": "explain",
+        "prior_band": "partial",
+        "task_difficulty": "medium"
+      },
+      "issuance_snapshot": {
+        "resources": [
+          {
+            "id": "res-hist-iteration-contrast-v1",
+            "carrier": "text_hybrid",
+            "supported_activities": ["contrast_cases"],
+            "protocol_version": "text-demo-v0.5",
+            "diagnostic_probe": {
+              "id": "probe-python-iteration-choice-v1",
+              "prompt": "比较两个循环目标，先判断哪一个适合 for、哪一个适合 while。",
+              "success_criteria": "能依据边界是否预先可知作出判断。"
+            },
+            "verification_task": {
+              "id": "verify-python-iteration-baseline-v1",
+              "prompt": "对两个未见迭代任务独立选择 for 或 while，并解释依据。",
+              "success_criteria": "A0 下选择正确且解释规则边界。",
+              "protected_answers": ["次数或序列边界明确时可用 for", "结束条件动态变化时可用 while"]
+            },
+            "teaches": ["kc-python-iteration"],
+            "requires": ["kc-python-function"],
+            "duration_minutes": 7
+          }
+        ],
+        "intervention": {
+          "id": "int-hist-iteration-baseline-v1",
+          "route_id": "route-python-iteration-baseline-v1",
+          "route_version": 1,
+          "goal_id": "goal-demo-a17-recursion",
+          "current_checkpoint": "kc-python-iteration",
+          "resource_ids": ["res-hist-iteration-contrast-v1"]
+        }
+      }
+    },
+    {
+      "binding_id": "rb-demo-a17-iteration-retention-v1",
+      "learner_id": "demo-a17",
+      "goal_id": "goal-demo-a17-recursion",
+      "concept_id": "kc-python-iteration",
+      "contract_id": "mc-python-iteration-baseline",
+      "contract_version": 1,
+      "route_id": "route-python-iteration-retention-v1",
+      "route_version": 1,
+      "verification_task_id": "retain-python-iteration-unseen-v1",
+      "issued_at": "2026-08-26T06:05:00Z",
+      "immutable": true,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "comparison_context": {
+        "domain": "python",
+        "knowledge_kind": "causal_structure",
+        "target_performance": "explain",
+        "prior_band": "partial",
+        "task_difficulty": "medium"
+      },
+      "issuance_snapshot": {
+        "resources": [
+          {
+            "id": "res-hist-iteration-retrieval-v1",
+            "carrier": "text_dialogue",
+            "supported_activities": ["retrieval_prompt"],
+            "protocol_version": "text-demo-v0.5",
+            "diagnostic_probe": {
+              "id": "probe-python-iteration-retention-v1",
+              "prompt": "不看笔记，说出 for 与 while 的主要选择边界。",
+              "success_criteria": "能独立说出一项可操作的判断依据。"
+            },
+            "verification_task": {
+              "id": "retain-python-iteration-unseen-v1",
+              "prompt": "七天后对一个未见循环任务选择结构并解释理由。",
+              "success_criteria": "A0 下选择和理由均正确。",
+              "protected_answers": ["根据边界是否预先可知选择循环结构"]
+            },
+            "teaches": ["kc-python-iteration"],
+            "requires": ["kc-python-function"],
+            "duration_minutes": 4
+          }
+        ],
+        "intervention": {
+          "id": "int-hist-iteration-retention-v1",
+          "route_id": "route-python-iteration-retention-v1",
+          "route_version": 1,
+          "goal_id": "goal-demo-a17-recursion",
+          "current_checkpoint": "kc-python-iteration",
+          "resource_ids": ["res-hist-iteration-retrieval-v1"]
+        }
+      }
+    },
+    {
+      "binding_id": "rb-demo-a17-call-stack-current-v1",
+      "learner_id": "demo-a17",
+      "goal_id": "goal-demo-a17-recursion",
+      "concept_id": "kc-python-call-stack",
+      "contract_id": "mc-python-call-stack",
+      "contract_version": 1,
+      "route_id": "route-demo-a17-recursion",
+      "route_version": 1,
+      "verification_task_id": "verify-python-call-stack-unseen-v1",
+      "issued_at": "2026-08-26T06:15:00Z",
+      "immutable": true,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "comparison_context": {
+        "domain": "python",
+        "knowledge_kind": "causal_structure",
+        "target_performance": "explain",
+        "prior_band": "partial",
+        "task_difficulty": "medium"
+      }
+    },
+    {
+      "binding_id": "rb-demo-a17-recursion-diagnostic-v1",
+      "learner_id": "demo-a17",
+      "goal_id": "goal-demo-a17-recursion",
+      "concept_id": "kc-python-recursion",
+      "contract_id": "mc-python-recursion",
+      "contract_version": 1,
+      "route_id": "route-demo-a17-recursion",
+      "route_version": 1,
+      "verification_task_id": "verify-python-recursion-diagnostic-v1",
+      "issued_at": "2026-08-26T06:25:00Z",
+      "immutable": true,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "comparison_context": {
+        "domain": "python",
+        "knowledge_kind": "causal_structure",
+        "target_performance": "predict",
+        "prior_band": "none",
+        "task_difficulty": "low"
+      },
+      "issuance_snapshot": {
+        "resources": [
+          {
+            "id": "res-hist-recursion-diagnostic-v1",
+            "carrier": "text_dialogue",
+            "supported_activities": ["predict_explain"],
+            "protocol_version": "text-demo-v0.5",
+            "diagnostic_probe": {
+              "id": "probe-python-recursion-order-v1",
+              "prompt": "预测一个单分支递归在到达基例前的调用顺序。",
+              "success_criteria": "能区分继续调用与开始返回。"
+            },
+            "verification_task": {
+              "id": "verify-python-recursion-diagnostic-v1",
+              "prompt": "对一个未见的简短递归例子预测展开顺序。",
+              "success_criteria": "A0 下写出正确的展开与返回方向。",
+              "protected_answers": ["先逐层调用到基例，再按相反方向返回"]
+            },
+            "teaches": ["kc-python-recursion"],
+            "requires": ["kc-python-function", "kc-python-call-stack"],
+            "duration_minutes": 3
+          }
+        ],
+        "intervention": {
+          "id": "int-hist-recursion-diagnostic-v1",
+          "route_id": "route-demo-a17-recursion",
+          "route_version": 1,
+          "goal_id": "goal-demo-a17-recursion",
+          "current_checkpoint": "kc-python-recursion",
+          "resource_ids": ["res-hist-recursion-diagnostic-v1"]
+        }
+      }
+    }
+  ],
+  "learner": {
+    "id": "usr-demo-a17",
+    "learner_id": "demo-a17",
+    "title": "匿名学习者 Demo A17",
+    "language": "zh-CN",
+    "preferences": [
+      "用户自述偏好短文字；只作为体验约束，不作为学习效果证据"
+    ],
+    "constraints": [
+      "单次学习预算约 25 分钟"
+    ],
+    "adaptation_hypotheses": [
+      {
+        "condition": "已有部分知识，需要解释中等难度的执行因果关系",
+        "activity": "对比例题后立即独立练习",
+        "basis": "函数调用与循环两个知识点的四次同情境独立表现中，对比例题在用时、提示、尝试和即时表现上形成唯一 Pareto 优势",
+        "confidence": "emerging",
+        "evidence_ids": ["ev-demo-a17-001", "ev-demo-a17-001-retention", "ev-demo-a17-002-baseline", "ev-demo-a17-002"]
+      },
+      {
+        "condition": "陌生的动态执行过程",
+        "activity": "带标注执行轨迹后让用户自己预测下一步",
+        "basis": "一次带 A1 提示的调用栈解释仅部分通过",
+        "confidence": "tentative",
+        "evidence_ids": ["ev-demo-a17-003"]
+      }
+    ]
+  },
+  "domain": {
+    "id": "dom-python",
+    "title": "Python 基础与程序执行",
+    "description": "用于演示知识边界、先修路径与 focus cone 的最小领域。"
+  },
+  "concepts": [
+    {
+      "id": "kc-python-function",
+      "title": "函数调用",
+      "knowledge_kind": "symbolic_procedure",
+      "difficulty": "introductory",
+      "relations": [
+        {"type": "part_of", "target": "dom-python"},
+        {"type": "related_to", "target": "kc-python-call-stack"}
+      ],
+      "graph_x": -0.72,
+      "graph_y": -0.18,
+      "goal_relevance": 0.62,
+      "interest_evidence": 0.46,
+      "readiness": 1.0
+    },
+    {
+      "id": "kc-python-iteration",
+      "title": "循环与迭代",
+      "knowledge_kind": "symbolic_procedure",
+      "difficulty": "introductory",
+      "relations": [
+        {"type": "part_of", "target": "dom-python"},
+        {"type": "contrasts_with", "target": "kc-python-recursion"}
+      ],
+      "graph_x": -0.52,
+      "graph_y": 0.62,
+      "goal_relevance": 0.45,
+      "interest_evidence": 0.38,
+      "readiness": 1.0
+    },
+    {
+      "id": "kc-python-call-stack",
+      "title": "调用栈",
+      "knowledge_kind": "causal_structure",
+      "difficulty": "intermediate",
+      "relations": [
+        {"type": "requires", "target": "kc-python-function"},
+        {"type": "part_of", "target": "dom-python"},
+        {"type": "related_to", "target": "kc-python-stack-overflow"}
+      ],
+      "graph_x": -0.18,
+      "graph_y": -0.42,
+      "goal_relevance": 0.92,
+      "interest_evidence": 0.82,
+      "readiness": 0.9
+    },
+    {
+      "id": "kc-python-recursion",
+      "title": "递归",
+      "knowledge_kind": "causal_structure",
+      "difficulty": "intermediate",
+      "relations": [
+        {"type": "requires", "target": "kc-python-function"},
+        {"type": "requires", "target": "kc-python-call-stack"},
+        {"type": "part_of", "target": "dom-python"},
+        {"type": "contrasts_with", "target": "kc-python-iteration"}
+      ],
+      "graph_x": 0.12,
+      "graph_y": 0.08,
+      "goal_relevance": 0.98,
+      "interest_evidence": 0.95,
+      "readiness": 0.78
+    },
+    {
+      "id": "kc-python-base-case",
+      "title": "递归终止条件",
+      "knowledge_kind": "rule",
+      "difficulty": "intermediate",
+      "relations": [
+        {"type": "requires", "target": "kc-python-recursion"},
+        {"type": "part_of", "target": "kc-python-recursion"}
+      ],
+      "graph_x": 0.52,
+      "graph_y": -0.28,
+      "goal_relevance": 0.84,
+      "interest_evidence": 0.68,
+      "readiness": 0.42
+    },
+    {
+      "id": "kc-python-stack-overflow",
+      "title": "栈溢出",
+      "knowledge_kind": "causal_structure",
+      "difficulty": "intermediate",
+      "relations": [
+        {"type": "requires", "target": "kc-python-call-stack"},
+        {"type": "requires", "target": "kc-python-recursion"},
+        {"type": "part_of", "target": "dom-python"}
+      ],
+      "graph_x": 0.72,
+      "graph_y": 0.32,
+      "goal_relevance": 1.0,
+      "interest_evidence": 0.9,
+      "readiness": 0.36
+    },
+    {
+      "id": "kc-python-memoization",
+      "title": "记忆化",
+      "knowledge_kind": "symbolic_procedure",
+      "difficulty": "advanced",
+      "relations": [
+        {"type": "requires", "target": "kc-python-recursion"},
+        {"type": "part_of", "target": "dom-python"}
+      ],
+      "graph_x": 0.38,
+      "graph_y": 0.78,
+      "goal_relevance": 0.24,
+      "interest_evidence": 0.3,
+      "readiness": 0.3
+    }
+  ],
+  "states": [
+    {
+      "concept_id": "kc-python-function",
+      "contract_id": "mc-python-function-baseline",
+      "contract_version": 1,
+      "mastery": "mastered",
+      "mastery_confidence": "high",
+      "boundary_position": "interior",
+      "immediate_contract_status": "met",
+      "contract_status": "met",
+      "retention_status": "passed_7d",
+      "valid_context": "Python 基础函数调用",
+      "supported_by": ["ev-demo-a17-001", "ev-demo-a17-001-retention"]
+    },
+    {
+      "concept_id": "kc-python-iteration",
+      "contract_id": "mc-python-iteration-baseline",
+      "contract_version": 1,
+      "mastery": "mastered",
+      "mastery_confidence": "high",
+      "boundary_position": "inner_fringe",
+      "immediate_contract_status": "met",
+      "contract_status": "met",
+      "retention_status": "passed_7d",
+      "valid_context": "Python 基础循环与变式任务",
+      "supported_by": ["ev-demo-a17-002-baseline", "ev-demo-a17-002"]
+    },
+    {
+      "concept_id": "kc-python-call-stack",
+      "contract_id": "mc-python-call-stack",
+      "contract_version": 1,
+      "mastery": "partial",
+      "mastery_confidence": "medium",
+      "boundary_position": "outer_fringe",
+      "immediate_contract_status": "in_progress",
+      "contract_status": "in_progress",
+      "retention_status": "not_started",
+      "valid_context": "两层 Python 函数调用轨迹",
+      "supported_by": ["ev-demo-a17-003"]
+    },
+    {
+      "concept_id": "kc-python-recursion",
+      "contract_id": "mc-python-recursion",
+      "contract_version": 1,
+      "mastery": "none",
+      "mastery_confidence": "medium",
+      "boundary_position": "blocked",
+      "immediate_contract_status": "in_progress",
+      "contract_status": "in_progress",
+      "retention_status": "not_started",
+      "valid_context": "Python 递归预测",
+      "supported_by": ["ev-demo-a17-004"]
+    },
+    {
+      "concept_id": "kc-python-base-case",
+      "contract_id": "mc-python-base-case",
+      "contract_version": 1,
+      "mastery": "unknown",
+      "mastery_confidence": "low",
+      "boundary_position": "blocked",
+      "immediate_contract_status": "not_tested",
+      "contract_status": "not_tested",
+      "retention_status": "not_required",
+      "valid_context": "当前目标",
+      "supported_by": []
+    },
+    {
+      "concept_id": "kc-python-stack-overflow",
+      "contract_id": "mc-python-stack-overflow",
+      "contract_version": 1,
+      "mastery": "unknown",
+      "mastery_confidence": "low",
+      "boundary_position": "blocked",
+      "immediate_contract_status": "not_tested",
+      "contract_status": "not_tested",
+      "retention_status": "not_started",
+      "valid_context": "当前目标",
+      "supported_by": []
+    },
+    {
+      "concept_id": "kc-python-memoization",
+      "contract_id": "mc-python-memoization",
+      "contract_version": 1,
+      "mastery": "unknown",
+      "mastery_confidence": "low",
+      "boundary_position": "blocked",
+      "immediate_contract_status": "not_tested",
+      "contract_status": "not_tested",
+      "retention_status": "not_required",
+      "valid_context": "当前目标",
+      "supported_by": []
+    }
+  ],
+  "goal": {
+    "id": "goal-demo-a17-recursion",
+    "title": "理解递归为什么会导致栈溢出",
+    "source_question": "为什么递归会发生栈溢出？",
+    "desired_outcome": "explain_predict_and_debug",
+    "retention_check_days": 7,
+    "targets": [
+      "kc-python-recursion",
+      "kc-python-call-stack",
+      "kc-python-base-case",
+      "kc-python-stack-overflow"
+    ],
+    "mastery_contract": [
+      "能独立解释一次递归调用如何进入和退出调用栈",
+      "能预测一个简短递归程序的调用顺序与最大栈深度",
+      "能指出终止条件缺失或不可达的原因",
+      "能在表面形式不同的新例子中诊断栈溢出",
+      "七天后仍能完成一项简化的预测与纠错任务"
+    ],
+    "mastery_contracts": [
+      {
+        "id": "mc-python-function-baseline",
+        "version": 1,
+        "concept_id": "kc-python-function",
+        "requirements": {
+          "minimum_qualified_evidence": 1,
+          "required_capabilities": ["independent_application", "explanation", "delayed_retention"],
+          "min_near_transfer": 0.75,
+          "delayed_retention": {"required": true, "min_score": 0.75, "min_delay_days": 7}
+        }
+      },
+      {
+        "id": "mc-python-iteration-baseline",
+        "version": 1,
+        "concept_id": "kc-python-iteration",
+        "requirements": {
+          "minimum_qualified_evidence": 1,
+          "required_capabilities": ["independent_application", "discrimination", "near_transfer", "delayed_retention"],
+          "min_near_transfer": 0.75,
+          "delayed_retention": {"required": true, "min_score": 0.75, "min_delay_days": 7}
+        }
+      },
+      {
+        "id": "mc-python-call-stack",
+        "version": 1,
+        "concept_id": "kc-python-call-stack",
+        "requirements": {
+          "minimum_qualified_evidence": 2,
+          "required_capabilities": ["explanation", "trace_prediction", "error_correction"],
+          "min_near_transfer": 0.7,
+          "delayed_retention": {"required": true, "min_score": 0.7, "min_delay_days": 7}
+        }
+      },
+      {
+        "id": "mc-python-recursion",
+        "version": 1,
+        "concept_id": "kc-python-recursion",
+        "requirements": {
+          "minimum_qualified_evidence": 2,
+          "required_capabilities": ["explanation", "prediction", "error_correction"],
+          "min_near_transfer": 0.7,
+          "delayed_retention": {"required": true, "min_score": 0.7, "min_delay_days": 7}
+        }
+      },
+      {
+        "id": "mc-python-base-case",
+        "version": 1,
+        "concept_id": "kc-python-base-case",
+        "requirements": {
+          "minimum_qualified_evidence": 1,
+          "required_capabilities": ["boundary_explanation", "error_correction"],
+          "min_near_transfer": 0.7,
+          "delayed_retention": {"required": false, "min_score": null, "min_delay_days": 0}
+        }
+      },
+      {
+        "id": "mc-python-stack-overflow",
+        "version": 1,
+        "concept_id": "kc-python-stack-overflow",
+        "requirements": {
+          "minimum_qualified_evidence": 2,
+          "required_capabilities": ["diagnosis", "near_transfer", "error_correction"],
+          "min_near_transfer": 0.75,
+          "delayed_retention": {"required": true, "min_score": 0.7, "min_delay_days": 7}
+        }
+      },
+      {
+        "id": "mc-python-memoization",
+        "version": 1,
+        "concept_id": "kc-python-memoization",
+        "requirements": {
+          "minimum_qualified_evidence": 1,
+          "required_capabilities": ["explanation", "application"],
+          "min_near_transfer": 0.7,
+          "delayed_retention": {"required": false, "min_score": null, "min_delay_days": 0}
+        }
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "id": "ev-demo-a17-001",
+      "about": "kc-python-function",
+      "goal_id": "goal-demo-a17-recursion",
+      "contract_id": "mc-python-function-baseline",
+      "contract_version": 1,
+      "phase": "verification",
+      "carrier": "text_hybrid",
+      "teaching_item_id": "teach-python-function-call-v1",
+      "verification_item_id": "verify-python-function-call-v1",
+      "verification_unseen": true,
+      "answer_revealed_before_first_attempt": false,
+      "verification_task_id": "verify-python-function-call-v1",
+      "bound_verification_task_id": "verify-python-function-call-v1",
+      "route_id_at_observation": "route-python-function-baseline-v1",
+      "route_version_at_observation": 1,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "observation_validity": "valid",
+      "mastery_eligible": true,
+      "evidence_kind": "independent_performance",
+      "demonstrates": ["independent_application", "explanation", "near_transfer"],
+      "result": "pass",
+      "independence": "independent",
+      "assistance_level": "A0",
+      "activity": "contrast_cases",
+      "context_key": "domain=python|knowledge_kind=causal_structure|target_performance=explain|prior_band=partial|task_difficulty=medium",
+      "elapsed_seconds": 330,
+      "attempts": 1,
+      "hint_count": 0,
+      "immediate_performance": 0.9,
+      "near_transfer": 0.85,
+      "delayed_retention": "not_tested",
+      "response_correct": true,
+      "explanation_quality": "pass",
+      "self_reported_effort": 3,
+      "retention_delay_days": 0,
+      "observed_at": "2026-08-19T06:00:00Z",
+      "summary": "独立定义并调用函数，能解释参数和返回值。"
+    },
+    {
+      "id": "ev-demo-a17-001-retention",
+      "about": "kc-python-function",
+      "goal_id": "goal-demo-a17-recursion",
+      "contract_id": "mc-python-function-baseline",
+      "contract_version": 1,
+      "phase": "retention",
+      "carrier": "text_hybrid",
+      "teaching_item_id": "teach-python-function-call-v1",
+      "verification_item_id": "retain-python-function-call-v1",
+      "verification_unseen": true,
+      "answer_revealed_before_first_attempt": false,
+      "verification_task_id": "retain-python-function-call-v1",
+      "bound_verification_task_id": "retain-python-function-call-v1",
+      "route_id_at_observation": "route-python-function-retention-v1",
+      "route_version_at_observation": 1,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "observation_validity": "valid",
+      "mastery_eligible": true,
+      "evidence_kind": "delayed_transfer",
+      "demonstrates": ["delayed_retention"],
+      "result": "pass",
+      "independence": "independent",
+      "assistance_level": "A0",
+      "activity": "contrast_cases",
+      "context_key": "domain=python|knowledge_kind=causal_structure|target_performance=explain|prior_band=partial|task_difficulty=medium",
+      "elapsed_seconds": 350,
+      "attempts": 1,
+      "hint_count": 0,
+      "immediate_performance": 0.84,
+      "near_transfer": "not_tested",
+      "delayed_retention": 0.84,
+      "retention_delay_days": 7,
+      "baseline_evidence_id": "ev-demo-a17-001",
+      "retention_task_id": "retain-python-function-call-v1",
+      "scheduled_for": "2026-08-26T06:00:00Z",
+      "response_correct": true,
+      "explanation_quality": "not_tested",
+      "self_reported_effort": 3,
+      "observed_at": "2026-08-26T06:00:00Z",
+      "summary": "在基线验证七个完整日后，独立解释一个未见函数调用的参数传递与返回过程。"
+    },
+    {
+      "id": "ev-demo-a17-002-baseline",
+      "about": "kc-python-iteration",
+      "goal_id": "goal-demo-a17-recursion",
+      "contract_id": "mc-python-iteration-baseline",
+      "contract_version": 1,
+      "phase": "verification",
+      "carrier": "text_hybrid",
+      "teaching_item_id": "teach-python-iteration-contrast-v1",
+      "verification_item_id": "verify-python-iteration-baseline-v1",
+      "verification_unseen": true,
+      "answer_revealed_before_first_attempt": false,
+      "verification_task_id": "verify-python-iteration-baseline-v1",
+      "bound_verification_task_id": "verify-python-iteration-baseline-v1",
+      "route_id_at_observation": "route-python-iteration-baseline-v1",
+      "route_version_at_observation": 1,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "observation_validity": "valid",
+      "mastery_eligible": true,
+      "evidence_kind": "independent_performance",
+      "demonstrates": ["independent_application", "discrimination", "near_transfer"],
+      "result": "pass",
+      "independence": "independent",
+      "assistance_level": "A0",
+      "activity": "contrast_cases",
+      "context_key": "domain=python|knowledge_kind=causal_structure|target_performance=explain|prior_band=partial|task_difficulty=medium",
+      "elapsed_seconds": 310,
+      "attempts": 1,
+      "hint_count": 0,
+      "immediate_performance": 0.92,
+      "near_transfer": 0.86,
+      "delayed_retention": "not_tested",
+      "response_correct": true,
+      "explanation_quality": "pass",
+      "self_reported_effort": 3,
+      "retention_delay_days": 0,
+      "observed_at": "2026-08-19T06:10:00Z",
+      "summary": "独立判断 for/while 的适用边界并完成首次未见变式。"
+    },
+    {
+      "id": "ev-demo-a17-002",
+      "about": "kc-python-iteration",
+      "goal_id": "goal-demo-a17-recursion",
+      "contract_id": "mc-python-iteration-baseline",
+      "contract_version": 1,
+      "phase": "retention",
+      "carrier": "text_dialogue",
+      "teaching_item_id": "teach-python-iteration-contrast-v1",
+      "verification_item_id": "retain-python-iteration-unseen-v1",
+      "verification_unseen": true,
+      "answer_revealed_before_first_attempt": false,
+      "verification_task_id": "retain-python-iteration-unseen-v1",
+      "bound_verification_task_id": "retain-python-iteration-unseen-v1",
+      "route_id_at_observation": "route-python-iteration-retention-v1",
+      "route_version_at_observation": 1,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "observation_validity": "valid",
+      "mastery_eligible": true,
+      "evidence_kind": "delayed_transfer",
+      "demonstrates": ["delayed_retention"],
+      "result": "pass",
+      "independence": "independent",
+      "assistance_level": "A0",
+      "activity": "retrieval_prompt",
+      "context_key": "domain=python|knowledge_kind=causal_structure|target_performance=explain|prior_band=partial|task_difficulty=medium",
+      "elapsed_seconds": 360,
+      "attempts": 1,
+      "hint_count": 0,
+      "immediate_performance": 0.82,
+      "near_transfer": "not_tested",
+      "delayed_retention": 0.82,
+      "retention_delay_days": 7,
+      "baseline_evidence_id": "ev-demo-a17-002-baseline",
+      "retention_task_id": "retain-python-iteration-unseen-v1",
+      "scheduled_for": "2026-08-26T06:10:00Z",
+      "response_correct": true,
+      "explanation_quality": "not_tested",
+      "self_reported_effort": 3,
+      "observed_at": "2026-08-26T06:10:00Z",
+      "summary": "在基线验证七个完整日后独立完成另一道未见变式。"
+    },
+    {
+      "id": "ev-demo-a17-003",
+      "about": "kc-python-call-stack",
+      "goal_id": "goal-demo-a17-recursion",
+      "contract_id": "mc-python-call-stack",
+      "contract_version": 1,
+      "phase": "teaching_process",
+      "carrier": "text_hybrid",
+      "teaching_item_id": "teach-python-call-stack-trace-v1",
+      "verification_item_id": null,
+      "verification_unseen": false,
+      "answer_revealed_before_first_attempt": false,
+      "verification_task_id": null,
+      "bound_verification_task_id": null,
+      "route_id_at_observation": "route-demo-a17-recursion",
+      "route_version_at_observation": 1,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "observation_validity": "valid",
+      "mastery_eligible": false,
+      "evidence_kind": "explanation",
+      "error_signature": "return_order_confusion",
+      "demonstrates": ["explanation", "trace_prediction"],
+      "result": "partial",
+      "independence": "not_observed",
+      "assistance_level": "A1",
+      "activity": "predict_explain",
+      "context_key": "domain=python|knowledge_kind=causal_structure|target_performance=explain|prior_band=partial|task_difficulty=medium",
+      "elapsed_seconds": 430,
+      "attempts": 2,
+      "hint_count": 1,
+      "immediate_performance": 0.72,
+      "near_transfer": "not_tested",
+      "delayed_retention": "not_tested",
+      "response_correct": true,
+      "explanation_quality": "partial",
+      "self_reported_effort": 5,
+      "retention_delay_days": 0,
+      "observed_at": "2026-08-26T06:20:00Z",
+      "summary": "能在轻提示下跟踪两层函数调用，但仍混淆返回顺序。"
+    },
+    {
+      "id": "ev-demo-a17-004",
+      "about": "kc-python-recursion",
+      "goal_id": "goal-demo-a17-recursion",
+      "contract_id": "mc-python-recursion",
+      "contract_version": 1,
+      "phase": "diagnostic",
+      "carrier": "text_dialogue",
+      "teaching_item_id": "probe-python-recursion-order-v1",
+      "verification_item_id": null,
+      "verification_unseen": false,
+      "answer_revealed_before_first_attempt": false,
+      "verification_task_id": null,
+      "bound_verification_task_id": null,
+      "route_id_at_observation": "route-demo-a17-recursion",
+      "route_version_at_observation": 1,
+      "source_ref_ids": ["assets/demo-seed.json"],
+      "observation_validity": "valid",
+      "mastery_eligible": false,
+      "evidence_kind": "diagnostic_probe",
+      "demonstrates": ["prediction"],
+      "result": "fail",
+      "independence": "independent",
+      "assistance_level": "A0",
+      "activity": "predict_explain",
+      "context_key": "domain=python|knowledge_kind=causal_structure|target_performance=predict|prior_band=none|task_difficulty=low",
+      "elapsed_seconds": 210,
+      "attempts": 1,
+      "hint_count": 0,
+      "immediate_performance": 0.3,
+      "near_transfer": "not_tested",
+      "delayed_retention": "not_tested",
+      "response_correct": false,
+      "explanation_quality": "fail",
+      "self_reported_effort": 6,
+      "retention_delay_days": 0,
+      "observed_at": "2026-08-26T06:30:00Z",
+      "summary": "未能独立预测递归展开顺序；因此记录 none，而非根据熟悉感推断掌握。"
+    }
+  ],
+  "resources": [
+    {
+      "id": "res-python-call-stack-trace",
+      "title": "递归调用栈预测轨迹",
+      "modality": "text",
+      "carrier": "text_hybrid",
+      "text_format": "trace",
+      "activity": "predict_explain",
+      "supported_activities": ["predict_explain"],
+            "protocol_version": "text-demo-v0.5",
+      "verification_required": true,
+      "diagnostic_probe": {
+        "id": "probe-python-call-stack-order-v1",
+        "prompt": "在不运行代码的情况下，写出 f(3) 到基例再返回的调用与返回顺序。",
+        "success_criteria": "独立区分入栈顺序与返回顺序，并正确标出基例。"
+      },
+      "verification_task": {
+        "id": "verify-python-call-stack-unseen-v1",
+        "prompt": "给定 h(n)：n 等于 0 时返回 1，否则返回 h(n-1)+2。不要运行代码，写出 h(3) 的最大同时存在栈帧数和返回顺序。",
+        "success_criteria": "A0 独立完成，最大深度和逐层返回结果均正确。",
+        "protected_answers": ["最大同时存在四个栈帧", "h(0)=1，h(1)=3，h(2)=5，h(3)=7"]
+      },
+      "duration_minutes": 6,
+      "cost_vector": {
+        "diagnosis": 0.5,
+        "prerequisites": 0.5,
+        "core_learning": 4.5,
+        "practice_feedback": 2.5,
+        "verification": 2.0,
+        "maintenance_relearning": 2.0
+      },
+      "difficulty": "introductory",
+      "teaches": ["kc-python-call-stack"],
+      "requires": ["kc-python-function"]
+    },
+    {
+      "id": "res-python-call-stack-contrast",
+      "title": "调用栈成对对比例题",
+      "modality": "text",
+      "carrier": "text_hybrid",
+      "text_format": "paired_cases",
+      "activity": "contrast_cases",
+      "supported_activities": ["contrast_cases"],
+            "protocol_version": "text-demo-v0.5",
+      "verification_required": true,
+      "diagnostic_probe": {
+        "id": "probe-python-call-stack-contrast-v1",
+        "prompt": "比较一个嵌套函数调用和一个单分支递归调用，标出两者入栈与返回的共同顺序规则。",
+        "success_criteria": "能指出先调用的栈帧后返回，并区分展开方向与返回方向。"
+      },
+      "verification_task": {
+        "id": "verify-python-call-stack-unseen-v1",
+        "prompt": "给定 h(n)：n 等于 0 时返回 1，否则返回 h(n-1)+2。不要运行代码，写出 h(3) 的最大同时存在栈帧数和返回顺序。",
+        "success_criteria": "A0 独立完成，最大深度和逐层返回结果均正确。",
+        "protected_answers": ["最大同时存在四个栈帧", "h(0)=1，h(1)=3，h(2)=5，h(3)=7"]
+      },
+      "duration_minutes": 6,
+      "cost_vector": {
+        "diagnosis": 0.5,
+        "prerequisites": 0.5,
+        "core_learning": 5.0,
+        "practice_feedback": 1.5,
+        "verification": 2.5,
+        "maintenance_relearning": 1.5
+      },
+      "difficulty": "introductory",
+      "teaches": ["kc-python-call-stack"],
+      "requires": ["kc-python-function"]
+    },
+    {
+      "id": "res-python-call-stack-faded",
+      "title": "调用栈逐步撤除支架练习",
+      "modality": "text",
+      "carrier": "text_hybrid",
+      "text_format": "worked_example_fading",
+      "activity": "worked_example_fading",
+      "supported_activities": ["worked_example_fading"],
+      "protocol_version": "text-demo-v0.5",
+      "verification_required": true,
+      "diagnostic_probe": {
+        "id": "probe-python-call-stack-faded-v1",
+        "prompt": "先看一条完整的调用栈返回轨迹，再补全另一条只保留关键节点的轨迹。",
+        "success_criteria": "能在支架逐步减少后独立补全入栈与返回方向。"
+      },
+      "verification_task": {
+        "id": "verify-python-call-stack-unseen-v1",
+        "prompt": "给定 h(n)：n 等于 0 时返回 1，否则返回 h(n-1)+2。不要运行代码，写出 h(3) 的最大同时存在栈帧数和返回顺序。",
+        "success_criteria": "A0 独立完成，最大深度和逐层返回结果均正确。",
+        "protected_answers": ["最大同时存在四个栈帧", "h(0)=1，h(1)=3，h(2)=5，h(3)=7"]
+      },
+      "duration_minutes": 4,
+      "cost_vector": {
+        "diagnosis": 0.5,
+        "prerequisites": 0.5,
+        "core_learning": 4.0,
+        "practice_feedback": 4.0,
+        "verification": 1.0,
+        "maintenance_relearning": 1.0
+      },
+      "difficulty": "introductory",
+      "teaches": ["kc-python-call-stack"],
+      "requires": ["kc-python-function"]
+    }
+  ],
+  "intervention": {
+    "id": "int-demo-a17-recursion-path",
+    "title": "递归与栈溢出最小学习路径",
+    "strategy": "text_hybrid_trace_predict_verify",
+    "medium_policy": "text_preferred",
+    "carrier": "text_hybrid",
+    "estimated_minutes": 25,
+    "cost_vector": {
+      "diagnosis": 2,
+      "prerequisites": 0,
+      "core_learning": 6,
+      "practice_feedback": 5,
+      "verification": 4,
+      "maintenance_relearning": 8
+    },
+    "adaptation_confidence": "tentative",
+    "route_id": "route-demo-a17-recursion",
+    "route_version": 1,
+    "goal_id": "goal-demo-a17-recursion",
+    "current_checkpoint": "kc-python-call-stack",
+    "uses_resource_ids": ["res-python-call-stack-trace", "res-python-call-stack-contrast", "res-python-call-stack-faded"],
+    "teaching_decision_inputs": {
+      "max_assistance_level": "A2",
+      "delivery_intent": "learn",
+      "text_sufficiency": "unknown",
+      "hard_constraints": [],
+      "prerequisite_gap": false
+    },
+    "current_activity_id": "res-python-call-stack-trace",
+    "current_probe_id": "probe-python-call-stack-order-v1",
+    "current_verification_task_id": "verify-python-call-stack-unseen-v1",
+    "completed_step_evidence_ids": ["ev-demo-a17-001", "ev-demo-a17-002"],
+    "parent_route_id": null,
+    "return_checkpoint": null,
+    "recovery_status": "original",
+    "recovered_from": [],
+    "path": [
+      "kc-python-call-stack",
+      "kc-python-recursion",
+      "kc-python-base-case",
+      "kc-python-stack-overflow"
+    ],
+    "rationale": "先补调用栈返回顺序，再进入递归；终止条件和栈溢出仍被递归理解阻塞。循环作为已掌握类比锚点，而不是先修。"
+  },
+  "session": {
+    "id": "ses-demo-a17-20260826t063000z",
+    "title": "递归学习诊断会话",
+    "source_kind": "synthetic_demo",
+    "source_ref": "assets/demo-seed.json",
+    "summary": "合成演示数据，不包含真实用户对话或身份信息。"
+  }
+}

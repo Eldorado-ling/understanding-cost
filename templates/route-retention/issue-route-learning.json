@@ -1,0 +1,9 @@
+{
+  "purpose": "learning",
+  "concept_id": "$CANONICAL_SELECTED_CONCEPT_ID",
+  "resource_id": "$CANONICAL_SELECTED_RESOURCE_ID",
+  "baseline_evidence_id": null,
+  "user_cost_priority": null,
+  "source_ref_ids": ["$CANONICAL_SESSION_OR_EVIDENCE_ID"],
+  "expected_chain_head": "$CURRENT_ROUTE_BINDING_CHAIN_HEAD"
+}

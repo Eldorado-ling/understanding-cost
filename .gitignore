@@ -1,0 +1,35 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python and tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+node_modules/
+dist/
+build/
+coverage/
+*.skill
+*.zip
+*.tmp
+.tmp-*
+
+# Local editor state
+.DS_Store
+Thumbs.db
+**/.obsidian/workspace*.json
+
+# Historical review builds and superseded diagrams
+review-assets/demo-vault-*/
+review-assets/understanding-cost-flow-v2.*
+review-assets/understanding-cost-flow-v3.*
+review-assets/*.svg
+review-assets/*.tmp.*

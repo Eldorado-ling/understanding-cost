@@ -1,0 +1,344 @@
+%% Understanding Cost Skill release: v4.0.0
+%% Copyright (c) 2026 ELD. All Rights Reserved.
+%% Canonical release PNG must be generated with scripts/render_flowchart.py so the ELD watermark is preserved.
+flowchart TD
+    U0["用户提出学习需求"] --> MODE{"入口模式？"}
+    TX_RULE["全局写事务合同：同一 canonical Vault 的外部跨进程独占锁覆盖<br/>读取→CAS／资格重算→多文件写入→完整校验→失败回滚；<br/>争用超时／CAS 冲突零写入，回滚不得覆盖另一成功事务"]
+    U0 -. "所有生产 Vault writer" .-> TX_RULE
+
+    MODE -->|map-domain| MAP["生成完成当前判断所需的协调地图"]
+    MAP --> MAPOUT["用户看到：结构、关键节点、证据边界和最少说明"]
+    MAPOUT --> PICK{"用户选择节点继续学习？"}
+    PICK -->|否| MAPEND["结束地图任务"]
+    PICK -->|是| GOAL
+
+    MODE -->|inspect| INSPECT["仅按明确授权展示可校正、可删除、带来源边界的内部快照"]
+    INSPECT --> CORRECT{"用户是否纠正或删除数据？"}
+    CORRECT -->|是| REBUILD_DERIVED["使相关派生值失效并重算；不改写原始事实"]
+    CORRECT -->|否| INSPECT_END["结束 inspect"]
+    REBUILD_DERIVED --> GOAL
+
+    MODE -->|continue / recover / rebuild| LOCATE["定位 Vault，并校验 manifest、证据与活动路线"]
+    LOCATE --> ROUTE_FOUND{"存在唯一有效活动路线？"}
+    ROUTE_FOUND -->|是| GOAL
+    ROUTE_FOUND -->|多条| ASK_ROUTE["请用户选择路线；不得自动合并"]
+    ASK_ROUTE --> LOCATE
+    ROUTE_FOUND -->|无| ASK_CREATE["请用户确认：从未创建，还是需要重建？"]
+    ASK_CREATE -->|未确认| STOP_RECOVERY["停止；不得静默初始化"]
+    ASK_CREATE -->|明确新建或重建| PROVISIONAL["建立 provisional / unknown 初始状态"]
+    PROVISIONAL --> GOAL
+
+    MODE -->|learn-one| HISTORY_NEEDED{"本次回答是否依赖已保存画像、边界、图谱或既有路线？"}
+    HISTORY_NEEDED -->|是| LOCATE
+    HISTORY_NEEDED -->|否：纯新问题且不要求持久化| GOAL
+
+    subgraph CORE_A["核心一：知识边界、候选步骤与路线｜Agent 内部"]
+        GOAL["定义可观察终点、情境、时间限制和 mastery contract"]
+        DIAG["只发出当前 route issuance 快照中唯一匹配的 diagnostic probe；<br/>probe ID、activity、carrier 与 route binding 必须一致"]
+        DIAG_REQUEST["把未解决缺口改写为 diagnose_now candidate_step；<br/>先绑定 probe，再走完整候选选择和路线签发"]
+        RAW["取得用户陈述或行为结果"]
+
+        VALUE_GATE{"该 phase 的结果字段有真实消费者，且 evidence envelope 具备<br/>phase/kind、完整 scope、canonical source、validity、route binding 与时间吗？"}
+        DROP_VALUE["不计算或丢弃该字段；不触发任何状态更新"]
+        BIND_VALUE["绑定 consumer_id 与完整追踪信息"]
+        SOURCE_SPLIT["分开记录：自述／兴趣行为／诊断／教学过程／独立验证；<br/>自述和模型生成内容不得授予 mastery"]
+        TIME_GATE{"observed_at 不在未来，且 state.evaluated_at<br/>不早于其最新支持证据吗？"}
+        TIME_REJECT["拒绝提交和路由；校正时钟或证据时间，不让未来记录改变当前状态"]
+        APPEND_DIAGNOSTIC["调用 append-evidence 原子提交诊断 evidence；<br/>由 canonical session 反查来源，重算同 scope state、全部 boundary，旧 Focus 标 stale；<br/>任一写入或派生校验失败则整次回滚"]
+
+        BOUNDARY["按当前 as_of 从 canonical evidence 确定性重算<br/>contract、mastery/confidence、diagnostic snapshot、误概念与 boundary；<br/>无证据保持 unknown，禁止信任陈旧 state"]
+        GRAPH["建立当前目标与 requires 先修闭包"]
+        STEPS["生成可执行 candidate_step<br/>concept＋action＋probe/activity/verification 绑定"]
+
+        HARD_GATE{"硬资格通过？<br/>同范围、目标闭包、mastery 相容、前置满足、硬约束满足"}
+        REPLAN_BLOCK["回退最短阻塞前置；未建模时只补必要图谱"]
+        ROUTE_LEVEL{"属于当前路线层级或恢复断点所需最短外缘？"}
+        STANDBY["standby；跳离断点必须先重规划并递增 route_version"]
+        ACTION_BIND{"动作绑定完整？<br/>diagnose 有探针；teach 有活动和未见验证任务"}
+        BIND_REPAIR["补齐可执行绑定；不能生成 teach_now / diagnose_now"]
+
+        COST_GATE["在同 mastery gate、动作、层级和时间范围内比较成本向量"]
+        PARETO{"成本状态？"}
+        DOMINATED["dominated：排除；Focus 不得恢复"]
+        COST_UNRESOLVED["unresolved：保留缺失值、fallback 估算及其来源；不得伪装成可比较成本"]
+        UNRESOLVED_PRIORITY{"user_cost_priority 是否显式提供？"}
+        UNRESOLVED_DEFAULT["priority=null：受限使用活动路线默认规则；<br/>selection_basis=route_default，不消费 Focus"]
+        USER_COST["解析 issue-route.user_cost_priority：null 或 canonical 成本维度无重复数组；<br/>Pareto 前沿内只按每个候选真实成本向量逐维比较并记录代价"]
+        USER_COST_VALID{"成本优先维度状态？"}
+        RESIDUAL{"仍有多少个同动作、同层级、Pareto 前沿 active 候选？"}
+        SELECT_DIRECT["选定唯一候选；selection_basis=route / cost / user_priority"]
+        ISSUE_EVENT["调用 issue-route：锁内按 expected_chain_head 做 CAS，并从实时 Vault 重建候选；<br/>非法／矛盾显式优先级，或显式优先级被 unresolved 阻塞时拒签；priority=null 的 unresolved 仅可 route_default<br/>仅 canonical concept/resource 才发行；冻结 route/version＋purpose＋baseline＋priority/basis＋task＋context＋快照／指纹"]
+        CHAIN_EVENT["追加顺序账本：sequence＋previous_hash＋event_hash；<br/>manifest 同步 anchor/head/length"]
+        TRUST_MODE{"route_trust_level？"}
+        TRUSTED_AUTH["trusted_seed_source：整链等于外部 seed；<br/>trusted_seed_prefix_local_extension：只证明 seed 前缀，后缀仍是本地链"]
+        LOCAL_AUTH["local_chain_only：只检测非协同漂移；<br/>不得宣称可抵抗同写权限协同重算"]
+        ISSUANCE_GATE{"按声明的信任级别，链、manifest、context、task 与快照全部通过校验？"}
+        ISSUANCE_REJECT["停止教学；定位损坏来源或追加新 route/version；<br/>不得修改旧发行事件，也不得让 evidence 自证"]
+
+        GOAL --> BOUNDARY
+        RAW --> VALUE_GATE
+        VALUE_GATE -->|否| DROP_VALUE
+        DROP_VALUE --> DIAG_REQUEST
+        DIAG_REQUEST --> STEPS
+        VALUE_GATE -->|是| BIND_VALUE
+        BIND_VALUE --> SOURCE_SPLIT
+        SOURCE_SPLIT --> TIME_GATE
+        TIME_GATE -->|否| TIME_REJECT
+        TIME_REJECT --> DIAG_REQUEST
+        TIME_GATE -->|是| APPEND_DIAGNOSTIC
+        APPEND_DIAGNOSTIC --> BOUNDARY
+        BOUNDARY --> GRAPH
+        GRAPH --> STEPS
+        STEPS --> HARD_GATE
+        HARD_GATE -->|否| REPLAN_BLOCK
+        REPLAN_BLOCK --> GRAPH
+        HARD_GATE -->|是| ROUTE_LEVEL
+        ROUTE_LEVEL -->|否| STANDBY
+        ROUTE_LEVEL -->|是| ACTION_BIND
+        ACTION_BIND -->|否| BIND_REPAIR
+        BIND_REPAIR --> STEPS
+        ACTION_BIND -->|是| COST_GATE
+        COST_GATE --> PARETO
+        PARETO -->|dominated| DOMINATED
+        PARETO -->|unresolved| COST_UNRESOLVED
+        COST_UNRESOLVED --> UNRESOLVED_PRIORITY
+        UNRESOLVED_PRIORITY -->|是| DIAG_REQUEST
+        UNRESOLVED_PRIORITY -->|null| UNRESOLVED_DEFAULT
+        UNRESOLVED_DEFAULT --> ISSUE_EVENT
+        PARETO -->|frontier| USER_COST
+        USER_COST --> USER_COST_VALID
+        USER_COST_VALID -->|无明确优先或 valid| RESIDUAL
+        USER_COST_VALID -->|inconsistent／invalid| COST_UNRESOLVED
+        RESIDUAL -->|一个| SELECT_DIRECT
+        SELECT_DIRECT --> ISSUE_EVENT
+        ISSUE_EVENT --> CHAIN_EVENT
+        CHAIN_EVENT --> TRUST_MODE
+        TRUST_MODE -->|trusted| TRUSTED_AUTH
+        TRUST_MODE -->|local| LOCAL_AUTH
+        TRUSTED_AUTH --> ISSUANCE_GATE
+        LOCAL_AUTH --> ISSUANCE_GATE
+        ISSUANCE_GATE -->|否| ISSUANCE_REJECT
+        ISSUANCE_REJECT --> LOCATE
+    end
+
+    DIAG --> U1["用户完成诊断问题或行为小任务"]
+    U1 --> RAW
+
+    subgraph FOCUS_BRIDGE["双核心桥梁：实验性 Focus Cone v0.3｜只排序剩余安全候选"]
+        FOCUS_SCOPE{"所有候选是否同动作、同路线层级、同 gate、同 Pareto 前沿？"}
+        FOCUS_INPUT{"全部候选的目标相关性、可靠兴趣证据、readiness 是否完整、有效、同范围，且快照<br/>purpose=residual_candidate_order、消费者／used_in_decision 合法，并精确匹配当前<br/>route_id＋route_version＋chain-head time_scope＋同一 decision batch，calculated_at 不在未来？"}
+        INPUT_IMPACT{"缺失值可能改变选择且存在低成本探针？"}
+        INFO_PROBE["执行高信息增益探针；focus_z=null"]
+        ROUTE_DEFAULT["使用路线默认或稳定 ID；selection_basis 不写 focus"]
+        FOCUS["计算 focus_z<br/>0.40×目标相关性＋0.30×兴趣证据＋0.30×readiness<br/>成本不进入公式"]
+        UNIQUE_TOP{"存在唯一最高值？"}
+        SELECT_FOCUS["选择最高候选；selection_basis=focus<br/>记录基线选择与 priority hypothesis"]
+        FOCUS_TIE["保留并列；使用 route_default / stable_tie_break"]
+
+        RESIDUAL -->|至少两个| FOCUS_SCOPE
+        FOCUS_SCOPE -->|否| ROUTE_DEFAULT
+        FOCUS_SCOPE -->|是| FOCUS_INPUT
+        FOCUS_INPUT -->|否| INPUT_IMPACT
+        INPUT_IMPACT -->|是| INFO_PROBE
+        INFO_PROBE --> DIAG_REQUEST
+        INPUT_IMPACT -->|否| ROUTE_DEFAULT
+        FOCUS_INPUT -->|是| FOCUS
+        FOCUS --> UNIQUE_TOP
+        UNIQUE_TOP -->|是| SELECT_FOCUS
+        UNIQUE_TOP -->|否| FOCUS_TIE
+    end
+
+    SELECT_FOCUS --> ISSUE_EVENT
+    FOCUS_TIE --> ISSUE_EVENT
+    ROUTE_DEFAULT --> ISSUE_EVENT
+    ISSUANCE_GATE -->|是| ISSUED_ACTION{"已签发 candidate_step 的 routing_action？"}
+    ISSUED_ACTION -->|diagnose_now| DIAG
+    ISSUED_ACTION -->|teach_now| CURRENT
+
+    subgraph CORE_B["核心二：活动选择、教学、反馈与掌握验证"]
+        CURRENT["从已校验发行账本恢复当前 candidate_step、route/version、task、context 与资源边界；<br/>链、快照或实时指纹不一致即拒绝继续"]
+        LOAD_PROFILE["只读取各 state 的 canonical supported_by 观察；<br/>可进入效果门槛的验证／保持必须绑定唯一已签发 task，过程重试不得增加门槛样本；<br/>适配器从 Vault 反查 contract、窗口和 issuance 后重算"]
+        PROFILE_GATE{"存在唯一、可复核的活动 Pareto 优势，且胜出 (activity, carrier) 自身达到门槛？<br/>emerging≥3 次／2 知识点；supported≥5 次／3 知识点＋迁移或保持"}
+        PROFILE_SELECT["按画像选择 activity / carrier<br/>记录被消费的 evidence ID"]
+        DEFAULT_TEXT["无可靠占优：按知识机制选择活动，默认 text_hybrid；只做单变量探索"]
+        ACTIVITY["固定链：目标表现 → 学习机制 → 教学活动 → carrier"]
+        RESOLVE_RESOURCE["只在当前 intervention 明确 uses 的真实资源中<br/>解析 activity＋carrier＋task＋context 兼容项"]
+        RESOURCE_GATE{"存在支持所选 activity / carrier 的真实资源？"}
+        RESOURCE_REPAIR["回退默认活动或创建兼容资源后重新解析；<br/>不得把画像结论只留在内存或静默换资源"]
+        PERSIST_RESOLUTION["持久化 resolved activity／resource／profile refs／route binding／context；<br/>同时保存 process 状态、反馈、下一动作、实测成本与 decision fingerprint；<br/>Focus Cone、教学投影和恢复只读取这次已落地决策"]
+
+        ANCHOR{"准备承担解释的知识锚点有同范围掌握证据吗？"}
+        KNOWN_ANCHOR["知识锚点：允许承担后续推理"]
+        INTEREST_CONTEXT["兴趣只作情境和动机；改写成已懂语言，不承担推理"]
+        DEPENDENCY{"解释是否只依赖已验证知识＋本单元已落地概念？"}
+        LOCAL_GROUND{"缺口可在本单元最小落地？"}
+        GROUND["术语四项落地：是什么／属于谁或在哪里／本例作用／关系方向"]
+        MICROCHECK{"小问题确认术语不再悬空？"}
+        TRUE_PREREQ["真正前置缺口：返回核心一重规划"]
+
+        HARD_MEDIUM{"存在非文字硬需求？"}
+        TEXT_SELECT["默认 text_hybrid：文字对话诊断 → 最小文字文件 → 文字对话生成、反馈与验收"]
+        STATIC_NEED{"需要表达归属、空间、多对象、多状态或界面判断？"}
+        STATIC["加入最小带标注静态图<br/>实际 asset＋已落地标签＋方向＋观察重点＋文字等价说明＋读图任务"]
+        VIDEO["视频：连续动作／时空变化本身是目标；包含暂停预测"]
+        INTERACTIVE["交互：必须操纵状态、实际执行或实时反馈"]
+        UNIT["只教学一个可验证单元"]
+        CONTENT_GUARD["由绑定验证题的题面与保护答案构造不可逆内容指纹；<br/>初始教学生成器只能取得 guard，不得读取原题或答案"]
+        PROJECT["用户输出白名单<br/>只给目标、落地术语、解释／图示、当前任务、反馈规则与下一步；<br/>若已有过程结论，feedback_rule／next_step 必须由过程适配器覆盖，不信 caller 自报；<br/>拦截 Focus、成本、画像、原因码、内部 ID 及受保护验证内容"]
+        LEAK_GATE{"投影内容与题面／答案指纹达到泄露阈值？"}
+        REBUILD_PROJECT["拒绝投影并重建最小教学内容；不放宽 guard"]
+        ISSUE_DELIVERY["追加 teaching_delivery：保存实际用户白名单投影及 SHA-256，<br/>并冻结 scope、route/binding/context、非空 decision、resource、activity/carrier 与真实当前 issued_at；<br/>向 Agent 另返 process_binding（不进入用户投影）；不能用 resolved_at＋偏移制造未来时间"]
+        DELIVERY_GATE{"签发记录通过完整 Vault 校验，且真实 issued_at<br/>严格晚于 resolution、又不晚于当前校验时刻？"}
+        DELIVERY_REJECT["回滚本次新签发；修复投影、路由绑定或时间后重新签发"]
+
+        LEARNER_GENERATE["用户完成教学题的主动生成、预测或操作"]
+        FEEDBACK["只给纠正当前错误所需的最小反馈"]
+        PROCESS_FIELDS["形成教学过程字段"]
+        PROCESS_CONSUMER{"每个字段有合法 consumer_id 和完整作用域／来源／时间吗？"}
+        NO_PROCESS_COMMIT["丢弃无消费者字段；若无可提交字段，不更新任何状态并重发最小任务"]
+        APPEND_PROCESS["调用 append-evidence 原子追加白名单过程证据；精确引用已签发 teaching_delivery ID、<br/>delivery_plan SHA-256、route task 与 response decision epoch；mastery_eligible=false；<br/>重算 state／boundary／Focus，并在不改作答前 decision epoch 的前提下刷新过程反馈、修复／表征／载体输入与实际成本"]
+        PROCESS_DERIVE["从 canonical process evidence 派生：<br/>当前错误／文字变体／最小反馈／下一动作＋实测 practice_feedback 成本；<br/>过程记录不进入 mastery 或方法效果门槛"]
+        READY_VERIFY{"最新过程是否绑定它实际收到的 teaching delivery decision epoch，且<br/>已成为当前 active resolution 的最后 process ref，status=ready_for_verification，<br/>result=pass、response_correct=true、explanation_quality=pass、demonstrates 含 explanation？"}
+        FAIL_KIND{"未准备的主要原因？"}
+        TEXT_REPAIR["第一次非先修失败：保持文字并重跑 resolve；<br/>若实测 practice_feedback 超过路线估计，只在真实兼容文字资源中选 duration 最低的修复活动"]
+        ESCALATION_GATE{"重复升级门全部满足？<br/>同错≥2、文字方案≥2、最高帮助≥A2、无先修缺口、媒介可供性匹配"}
+        KEEP_TEXT["未满足：继续最小文字修复"]
+
+        OPEN_VERIFY["仅 open-verification 按最新已提交 process evidence ID 加载原始验证题；<br/>先复核 process↔teaching_delivery 的 response decision 指纹和先后时间，<br/>再复核当前 resolution 的最后 process ref/status 与 route/task/resource/activity/carrier 未漂移，最后匹配 guard"]
+        UNSEEN_TASK["发出绑定合同能力的未见平行任务；<br/>verification item_id 与 teaching item_id 不同，完整答案不随任务输出"]
+        VERIFY_GATE{"证据资格全部满足？<br/>未见、未提前泄露完整答案、A0、同范围、绑定当前 route/task/version；<br/>verification 仅 learning issuance，retention 仅 retention issuance"}
+        REBUILD_VERIFY["资格不合格：只记过程观察，重建验证任务；不得评估合同"]
+        QUALIFIED_RESULT["合格验证结果：正确和错误都追加；<br/>记录实际 demonstrated capabilities 与表现字段"]
+        VERIFY_CONSUMER{"验证字段均有 verification_gate / contract / retention 等明确消费者？"}
+        NO_VERIFY_COMMIT["丢弃无消费者字段；不更新合同"]
+        ATOMIC_UPDATE["调用 append-evidence 原子回写：追加 verification／retention evidence →<br/>retention 必须引用真实 open receipt，并重算 open→schedule→issuance 与 opened_at&lt;observed_at；<br/>随后重算 contract、mastery、boundary、Focus；任一不一致则整次回滚"]
+        IMMEDIATE_CONTRACT{"即时合同部分是否满足？<br/>独立验证数、能力覆盖、近迁移"}
+        CONTRACT_ERROR{"即时要求未满足：按错误类型选择最短修复"}
+        RETENTION_REQUIRED{"该 concept 合同要求延迟保持？"}
+        RETENTION_STATUS{"保持状态？<br/>not_started／pending／due／passed_Nd／failed／conflicted"}
+        ROUTE_UPDATE["append-evidence 只返回 route_reissue_required，不伪造下一路线；<br/>回到核心一重算候选，再调用 issue-route 递增 route_version 并追加 route issuance"]
+        ALL_TARGETS{"goal 的全部 target 完整合同都满足？"}
+        SET_PENDING["先 issue-route(purpose=retention) 签发不同 task fingerprint 并显式冻结唯一 baseline；<br/>再调用 schedule-retention：锁内 CAS 核验 state 与 issuance.baseline 精确相等，内部派生<br/>scheduled_for=max(baseline＋min_delay, not_before)，追加 schedule receipt；state 只保存 current ID；已到期直接 due"]
+        WAIT_RETENTION["保存断点并等待到期；此时不完成路线"]
+        DELAYED_TASK["调用 open-delayed-verification：实时 due 后锁内先原子追加或幂等复用 open receipt，<br/>再只投影 user_task；schedule/open 均为 exact metadata＋全字段指纹＋canonical body，<br/>内部 binding 引用 baseline／schedule／task／route；receipt 不存题面、答案或 user_task"]
+        RETENTION_REPAIR["保持失败：执行最短提取／再学习修复，并取得晚于失败的<br/>更新且合格 verification baseline；旧 schedule／open／evidence 保留"]
+        FULL_CONTRACT["当前 concept 完整合同 met"]
+        COMPLETE["完成；输出带目标范围与时间范围的结果"]
+
+        CURRENT --> LOAD_PROFILE
+        LOAD_PROFILE --> PROFILE_GATE
+        PROFILE_GATE -->|是| PROFILE_SELECT
+        PROFILE_GATE -->|否| DEFAULT_TEXT
+        PROFILE_SELECT --> ACTIVITY
+        DEFAULT_TEXT --> ACTIVITY
+        ACTIVITY --> RESOLVE_RESOURCE
+        RESOLVE_RESOURCE --> RESOURCE_GATE
+        RESOURCE_GATE -->|否| RESOURCE_REPAIR
+        RESOURCE_REPAIR --> ACTIVITY
+        RESOURCE_GATE -->|是| PERSIST_RESOLUTION
+        PERSIST_RESOLUTION --> ANCHOR
+        ANCHOR -->|是| KNOWN_ANCHOR
+        ANCHOR -->|否| INTEREST_CONTEXT
+        KNOWN_ANCHOR --> DEPENDENCY
+        INTEREST_CONTEXT --> DEPENDENCY
+        DEPENDENCY -->|是| HARD_MEDIUM
+        DEPENDENCY -->|否| LOCAL_GROUND
+        LOCAL_GROUND -->|可以局部落地| GROUND
+        GROUND --> MICROCHECK
+        MICROCHECK -->|通过| DEPENDENCY
+        MICROCHECK -->|未通过但可局部解释| GROUND
+        LOCAL_GROUND -->|真正前置| TRUE_PREREQ
+        TRUE_PREREQ --> GRAPH
+
+        HARD_MEDIUM -->|连续运动／时空变化| VIDEO
+        HARD_MEDIUM -->|状态操纵／实时反馈| INTERACTIVE
+        HARD_MEDIUM -->|无| TEXT_SELECT
+        TEXT_SELECT --> STATIC_NEED
+        STATIC_NEED -->|是| STATIC
+        STATIC_NEED -->|否| UNIT
+        STATIC --> UNIT
+        VIDEO --> UNIT
+        INTERACTIVE --> UNIT
+        UNIT --> CONTENT_GUARD
+        CONTENT_GUARD --> PROJECT
+        PROJECT --> LEAK_GATE
+        LEAK_GATE -->|是| REBUILD_PROJECT
+        REBUILD_PROJECT --> PROJECT
+        LEAK_GATE -->|否| ISSUE_DELIVERY
+        ISSUE_DELIVERY --> DELIVERY_GATE
+        DELIVERY_GATE -->|否| DELIVERY_REJECT
+        DELIVERY_REJECT --> PROJECT
+
+        FEEDBACK --> PROCESS_FIELDS
+        PROCESS_FIELDS --> PROCESS_CONSUMER
+        PROCESS_CONSUMER -->|否| NO_PROCESS_COMMIT
+        NO_PROCESS_COMMIT --> LEARNER_GENERATE
+        PROCESS_CONSUMER -->|是| APPEND_PROCESS
+        APPEND_PROCESS --> PROCESS_DERIVE
+        PROCESS_DERIVE --> READY_VERIFY
+        READY_VERIFY -->|是| OPEN_VERIFY
+        OPEN_VERIFY --> UNSEEN_TASK
+        READY_VERIFY -->|否| FAIL_KIND
+        FAIL_KIND -->|前置缺口| TRUE_PREREQ
+        FAIL_KIND -->|首次非先修失败| TEXT_REPAIR
+        TEXT_REPAIR --> ACTIVITY
+        FAIL_KIND -->|重复同类错误| ESCALATION_GATE
+        ESCALATION_GATE -->|否| KEEP_TEXT
+        KEEP_TEXT --> TEXT_REPAIR
+        ESCALATION_GATE -->|video 可供性匹配| VIDEO
+        ESCALATION_GATE -->|interactive 可供性匹配| INTERACTIVE
+
+        VERIFY_GATE -->|否| REBUILD_VERIFY
+        REBUILD_VERIFY --> UNSEEN_TASK
+        VERIFY_GATE -->|是| QUALIFIED_RESULT
+        QUALIFIED_RESULT --> VERIFY_CONSUMER
+        VERIFY_CONSUMER -->|否| NO_VERIFY_COMMIT
+        NO_VERIFY_COMMIT --> UNSEEN_TASK
+        VERIFY_CONSUMER -->|是| ATOMIC_UPDATE
+        ATOMIC_UPDATE --> IMMEDIATE_CONTRACT
+        IMMEDIATE_CONTRACT -->|未满足| CONTRACT_ERROR
+        CONTRACT_ERROR -->|前置缺口| TRUE_PREREQ
+        CONTRACT_ERROR -->|概念／表征错误| TEXT_REPAIR
+        IMMEDIATE_CONTRACT -->|满足| RETENTION_REQUIRED
+        RETENTION_REQUIRED -->|否| FULL_CONTRACT
+        RETENTION_REQUIRED -->|是| RETENTION_STATUS
+        RETENTION_STATUS -->|not_started| SET_PENDING
+        RETENTION_STATUS -->|pending 且未到期| WAIT_RETENTION
+        RETENTION_STATUS -->|due| DELAYED_TASK
+        RETENTION_STATUS -->|passed_Nd| FULL_CONTRACT
+        RETENTION_STATUS -->|failed／conflicted| RETENTION_REPAIR
+        RETENTION_REPAIR --> TEXT_REPAIR
+        RETENTION_REPAIR -. "新 baseline 完成后，用新 task／binding 追加 superseding schedule" .-> SET_PENDING
+        FULL_CONTRACT --> ALL_TARGETS
+        ALL_TARGETS -->|否| ROUTE_UPDATE
+        ROUTE_UPDATE --> BOUNDARY
+        ALL_TARGETS -->|是| COMPLETE
+        SET_PENDING --> WAIT_RETENTION
+    end
+
+    DELIVERY_GATE -->|是| U2["用户只看到已签发的教学投影，并先独立完成教学题；完整答案不会提前展示"]
+    U2 --> LEARNER_GENERATE
+    LEARNER_GENERATE --> FEEDBACK
+
+    UNSEEN_TASK --> UVERIFY["用户在 A0 下独立完成未见验证任务"]
+    DELAYED_TASK --> UVERIFY
+    UVERIFY --> VERIFY_GATE
+    WAIT_RETENTION --> UWAIT["用户看到：即时要求已满足、保持检查日期与恢复入口；尚未完整掌握"]
+    UWAIT -. "到期后 continue / recover，按当前时间重算为 due" .-> RETENTION_STATUS
+
+    PROCESS_DERIVE -. "下一次 resolve 消费实测 practice_feedback；超过路线估计时约束文字修复活动选择" .-> ACTIVITY
+    ATOMIC_UPDATE -. "验证结果回写核心一：改变边界、下一次画像输入与 Focus 候选；路线必须重新签发" .-> BOUNDARY
+
+    COMPLETE --> U3["用户看到：本次达到的能力、适用范围、保持状态和必要下一步"]
+
+    classDef coreA fill:#eaf2ff,stroke:#4c78a8,color:#17223b;
+    classDef focus fill:#fff3d6,stroke:#c58b23,color:#3d2a00;
+    classDef coreB fill:#eaf7ef,stroke:#4f8b64,color:#163322;
+    classDef user fill:#f5f5f5,stroke:#777,color:#222;
+    classDef stop fill:#fbeaea,stroke:#b45858,color:#3b1717;
+
+    class HISTORY_NEEDED,GOAL,DIAG,DIAG_REQUEST,RAW,VALUE_GATE,DROP_VALUE,BIND_VALUE,SOURCE_SPLIT,TIME_GATE,TIME_REJECT,APPEND_DIAGNOSTIC,BOUNDARY,GRAPH,STEPS,HARD_GATE,REPLAN_BLOCK,ROUTE_LEVEL,STANDBY,ACTION_BIND,BIND_REPAIR,COST_GATE,PARETO,DOMINATED,COST_UNRESOLVED,UNRESOLVED_PRIORITY,UNRESOLVED_DEFAULT,USER_COST,USER_COST_VALID,RESIDUAL,SELECT_DIRECT,ISSUE_EVENT,CHAIN_EVENT,TRUST_MODE,TRUSTED_AUTH,LOCAL_AUTH,ISSUANCE_GATE,ISSUANCE_REJECT,ISSUED_ACTION coreA;
+    class FOCUS_SCOPE,FOCUS_INPUT,INPUT_IMPACT,INFO_PROBE,ROUTE_DEFAULT,FOCUS,UNIQUE_TOP,SELECT_FOCUS,FOCUS_TIE focus;
+    class CURRENT,LOAD_PROFILE,PROFILE_GATE,PROFILE_SELECT,DEFAULT_TEXT,ACTIVITY,RESOLVE_RESOURCE,RESOURCE_GATE,RESOURCE_REPAIR,PERSIST_RESOLUTION,ANCHOR,KNOWN_ANCHOR,INTEREST_CONTEXT,DEPENDENCY,LOCAL_GROUND,GROUND,MICROCHECK,TRUE_PREREQ,HARD_MEDIUM,TEXT_SELECT,STATIC_NEED,STATIC,VIDEO,INTERACTIVE,UNIT,CONTENT_GUARD,PROJECT,LEAK_GATE,REBUILD_PROJECT,ISSUE_DELIVERY,DELIVERY_GATE,DELIVERY_REJECT,LEARNER_GENERATE,FEEDBACK,PROCESS_FIELDS,PROCESS_CONSUMER,NO_PROCESS_COMMIT,APPEND_PROCESS,PROCESS_DERIVE,READY_VERIFY,FAIL_KIND,TEXT_REPAIR,ESCALATION_GATE,KEEP_TEXT,OPEN_VERIFY,UNSEEN_TASK,VERIFY_GATE,REBUILD_VERIFY,QUALIFIED_RESULT,VERIFY_CONSUMER,NO_VERIFY_COMMIT,ATOMIC_UPDATE,IMMEDIATE_CONTRACT,CONTRACT_ERROR,RETENTION_REQUIRED,RETENTION_STATUS,SET_PENDING,WAIT_RETENTION,DELAYED_TASK,RETENTION_REPAIR,FULL_CONTRACT,ROUTE_UPDATE,ALL_TARGETS,COMPLETE coreB;
+    class U0,U1,U2,U3,UVERIFY,UWAIT,MAPOUT,TX_RULE user;
+    class MAPEND,INSPECT_END,STOP_RECOVERY stop;

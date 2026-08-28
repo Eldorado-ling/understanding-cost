@@ -1,0 +1,5 @@
+{
+  "manifest": "00-system/manifest.json",
+  "schema": "uc-demo/0.2",
+  "vault_id": "vault-demo-python-recursion"
+}

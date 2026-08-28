@@ -1,0 +1,12 @@
+{
+  "purpose": "retention",
+  "concept_id": "$CONCEPT_ID",
+  "resource_id": "$UNUSED_RETENTION_RESOURCE_ID",
+  "baseline_evidence_id": "$QUALIFIED_IMMEDIATE_VERIFICATION_EVIDENCE_ID",
+  "user_cost_priority": null,
+  "source_ref_ids": [
+    "$CANONICAL_SESSION_ID",
+    "$QUALIFIED_IMMEDIATE_VERIFICATION_EVIDENCE_ID"
+  ],
+  "expected_chain_head": "$CURRENT_ROUTE_BINDING_CHAIN_HEAD"
+}

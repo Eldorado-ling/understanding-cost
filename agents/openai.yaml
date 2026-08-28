@@ -1,0 +1,4 @@
+interface:
+  display_name: "理解成本学习导航"
+  short_description: "根据已有基础规划学习路径，分步讲解并通过练习确认掌握"
+  default_prompt: "使用 $understanding-cost 根据我的基础教我理解一个新知识点，并用一个小任务检查我是否掌握。"

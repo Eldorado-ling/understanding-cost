@@ -1,0 +1,30 @@
+ELD PROPRIETARY LICENSE
+Version 1.0, 2026-08-28
+
+Copyright (c) 2026 ELD. All Rights Reserved.
+
+本仓库及其中的 Skill 指令、流程图、脚本、数据结构、模板、Demo、文档和其他内容（以下统称“本作品”）均为 ELD 的专有作品。本声明不构成开源许可。
+
+ELD 明确授权的接收者可以在授权有效期和范围内，为个人、非商业目的下载、安装、运行本作品，并在接收者本人控制的设备和 Agent 中进行内部测试或评估。该有限许可不可转让、不可再许可，也不包含公开传播或向第三方提供副本的权利。
+
+除上述有限许可或 ELD 另行作出的书面授权外，任何个人或组织均不得：
+
+1. 将本作品或其任何部分用于直接或间接商业目的；
+2. 转载、转发、公开传播、镜像、重新打包或二次发布本作品；
+3. 出借、出租、出售、交换、再许可本作品，或将副本提供给任何未经授权的第三方、Agent、模型、服务或产品；
+4. 移除、遮挡或修改 ELD 名称、版权声明、水印、来源标识或本许可；
+5. 传播修改版、翻译版、改编版或其他衍生作品。
+
+任何授权均不默示授予所有权、商标权、专利权或超出书面授权范围的其他权利，并且必须完整保留本许可和所有 ELD 水印。
+
+本作品按“现状”提供，不作任何明示或默示保证。在适用法律允许的最大范围内，版权所有者不对使用或无法使用本作品造成的任何损失承担责任。
+
+如需商业许可、转载、转发、借用、集成或其他使用授权，必须先取得 ELD 的书面许可。
+
+---
+
+This repository and all included skill instructions, diagrams, scripts, data structures, templates, demos, documentation, and other materials are proprietary works of ELD. A recipient expressly authorized by ELD may download, install, run, and internally evaluate the work for personal, non-commercial purposes on devices and agents controlled by that recipient. This limited permission is non-transferable and non-sublicensable.
+
+No permission is granted to use the work commercially; redistribute, forward, publish, mirror, or repackage it; lend, rent, sell, sublicense, or provide copies to an unauthorized third party or agent; remove ELD notices or watermarks; or distribute modified, translated, adapted, or derivative versions, except under ELD's prior express written authorization.
+
+This is not an open-source license. Every authorized copy, review, test, or evaluation must remain within the authorization and retain this license and every ELD watermark.

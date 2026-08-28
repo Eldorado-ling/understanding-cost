@@ -1,0 +1,883 @@
+{
+  "errors": [],
+  "generated_at": "2026-08-28T03:24:07Z",
+  "node_count": 37,
+  "nodes": {
+    "dom-python": {
+      "path": "10-domain/python/dom-python.md",
+      "relations": [],
+      "title": "Python 基础与程序执行",
+      "type": "domain",
+      "wikilinks": []
+    },
+    "ev-demo-a17-001": {
+      "path": "20-learner/evidence/ev-demo-a17-001.md",
+      "relations": [
+        {
+          "target": "kc-python-function",
+          "type": "about"
+        },
+        {
+          "target": "ses-demo-a17-20260826t063000z",
+          "type": "derived_from"
+        }
+      ],
+      "title": "证据：kc-python-function / independent_performance",
+      "type": "evidence",
+      "wikilinks": [
+        "kc-python-function",
+        "ses-demo-a17-20260826t063000z"
+      ]
+    },
+    "ev-demo-a17-001-retention": {
+      "path": "20-learner/evidence/ev-demo-a17-001-retention.md",
+      "relations": [
+        {
+          "target": "kc-python-function",
+          "type": "about"
+        },
+        {
+          "target": "ses-demo-a17-20260826t063000z",
+          "type": "derived_from"
+        }
+      ],
+      "title": "证据：kc-python-function / delayed_transfer",
+      "type": "evidence",
+      "wikilinks": [
+        "kc-python-function",
+        "ses-demo-a17-20260826t063000z"
+      ]
+    },
+    "ev-demo-a17-002": {
+      "path": "20-learner/evidence/ev-demo-a17-002.md",
+      "relations": [
+        {
+          "target": "kc-python-iteration",
+          "type": "about"
+        },
+        {
+          "target": "ses-demo-a17-20260826t063000z",
+          "type": "derived_from"
+        }
+      ],
+      "title": "证据：kc-python-iteration / delayed_transfer",
+      "type": "evidence",
+      "wikilinks": [
+        "kc-python-iteration",
+        "ses-demo-a17-20260826t063000z"
+      ]
+    },
+    "ev-demo-a17-002-baseline": {
+      "path": "20-learner/evidence/ev-demo-a17-002-baseline.md",
+      "relations": [
+        {
+          "target": "kc-python-iteration",
+          "type": "about"
+        },
+        {
+          "target": "ses-demo-a17-20260826t063000z",
+          "type": "derived_from"
+        }
+      ],
+      "title": "证据：kc-python-iteration / independent_performance",
+      "type": "evidence",
+      "wikilinks": [
+        "kc-python-iteration",
+        "ses-demo-a17-20260826t063000z"
+      ]
+    },
+    "ev-demo-a17-003": {
+      "path": "20-learner/evidence/ev-demo-a17-003.md",
+      "relations": [
+        {
+          "target": "kc-python-call-stack",
+          "type": "about"
+        },
+        {
+          "target": "ses-demo-a17-20260826t063000z",
+          "type": "derived_from"
+        }
+      ],
+      "title": "证据：kc-python-call-stack / explanation",
+      "type": "evidence",
+      "wikilinks": [
+        "kc-python-call-stack",
+        "ses-demo-a17-20260826t063000z"
+      ]
+    },
+    "ev-demo-a17-004": {
+      "path": "20-learner/evidence/ev-demo-a17-004.md",
+      "relations": [
+        {
+          "target": "kc-python-recursion",
+          "type": "about"
+        },
+        {
+          "target": "ses-demo-a17-20260826t063000z",
+          "type": "derived_from"
+        }
+      ],
+      "title": "证据：kc-python-recursion / diagnostic_probe",
+      "type": "evidence",
+      "wikilinks": [
+        "kc-python-recursion",
+        "ses-demo-a17-20260826t063000z"
+      ]
+    },
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-base-case-20260828t032407z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-base-case-20260828t032407z.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-base-case",
+          "type": "about"
+        }
+      ],
+      "title": "Focus：递归终止条件",
+      "type": "focus_snapshot",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-base-case"
+      ]
+    },
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-call-stack-20260828t032407z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-call-stack-20260828t032407z.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-call-stack",
+          "type": "about"
+        }
+      ],
+      "title": "Focus：调用栈",
+      "type": "focus_snapshot",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-call-stack"
+      ]
+    },
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-function-20260828t032407z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-function-20260828t032407z.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-function",
+          "type": "about"
+        }
+      ],
+      "title": "Focus：函数调用",
+      "type": "focus_snapshot",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-function"
+      ]
+    },
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-iteration-20260828t032407z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-iteration-20260828t032407z.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-iteration",
+          "type": "about"
+        }
+      ],
+      "title": "Focus：循环与迭代",
+      "type": "focus_snapshot",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-iteration"
+      ]
+    },
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-memoization-20260828t032407z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-memoization-20260828t032407z.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-memoization",
+          "type": "about"
+        }
+      ],
+      "title": "Focus：记忆化",
+      "type": "focus_snapshot",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-memoization"
+      ]
+    },
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-recursion-20260828t032407z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-recursion-20260828t032407z.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-recursion",
+          "type": "about"
+        }
+      ],
+      "title": "Focus：递归",
+      "type": "focus_snapshot",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-recursion"
+      ]
+    },
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-stack-overflow-20260828t032407z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-stack-overflow-20260828t032407z.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-stack-overflow",
+          "type": "about"
+        }
+      ],
+      "title": "Focus：栈溢出",
+      "type": "focus_snapshot",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-stack-overflow"
+      ]
+    },
+    "goal-demo-a17-recursion": {
+      "path": "20-learner/goals/goal-demo-a17-recursion.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "kc-python-recursion",
+          "type": "targets"
+        },
+        {
+          "target": "kc-python-call-stack",
+          "type": "targets"
+        },
+        {
+          "target": "kc-python-base-case",
+          "type": "targets"
+        },
+        {
+          "target": "kc-python-stack-overflow",
+          "type": "targets"
+        }
+      ],
+      "title": "理解递归为什么会导致栈溢出",
+      "type": "goal",
+      "wikilinks": [
+        "usr-demo-a17",
+        "kc-python-recursion",
+        "kc-python-call-stack",
+        "kc-python-base-case",
+        "kc-python-stack-overflow",
+        "kc-python-function",
+        "kc-python-iteration",
+        "kc-python-memoization"
+      ]
+    },
+    "int-demo-a17-recursion-path": {
+      "path": "30-learning/interventions/int-demo-a17-recursion-path.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "implements"
+        },
+        {
+          "target": "res-python-call-stack-trace",
+          "type": "uses"
+        },
+        {
+          "target": "res-python-call-stack-contrast",
+          "type": "uses"
+        },
+        {
+          "target": "res-python-call-stack-faded",
+          "type": "uses"
+        }
+      ],
+      "title": "递归与栈溢出最小学习路径",
+      "type": "intervention",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "res-python-call-stack-trace",
+        "res-python-call-stack-contrast",
+        "res-python-call-stack-faded",
+        "kc-python-call-stack",
+        "kc-python-recursion",
+        "kc-python-base-case",
+        "kc-python-stack-overflow"
+      ]
+    },
+    "kc-python-base-case": {
+      "path": "10-domain/python/kc-python-base-case.md",
+      "relations": [
+        {
+          "target": "kc-python-recursion",
+          "type": "requires"
+        },
+        {
+          "target": "kc-python-recursion",
+          "type": "part_of"
+        }
+      ],
+      "title": "递归终止条件",
+      "type": "concept",
+      "wikilinks": [
+        "kc-python-recursion"
+      ]
+    },
+    "kc-python-call-stack": {
+      "path": "10-domain/python/kc-python-call-stack.md",
+      "relations": [
+        {
+          "target": "kc-python-function",
+          "type": "requires"
+        },
+        {
+          "target": "dom-python",
+          "type": "part_of"
+        },
+        {
+          "target": "kc-python-stack-overflow",
+          "type": "related_to"
+        }
+      ],
+      "title": "调用栈",
+      "type": "concept",
+      "wikilinks": [
+        "kc-python-function",
+        "dom-python",
+        "kc-python-stack-overflow"
+      ]
+    },
+    "kc-python-function": {
+      "path": "10-domain/python/kc-python-function.md",
+      "relations": [
+        {
+          "target": "dom-python",
+          "type": "part_of"
+        },
+        {
+          "target": "kc-python-call-stack",
+          "type": "related_to"
+        }
+      ],
+      "title": "函数调用",
+      "type": "concept",
+      "wikilinks": [
+        "dom-python",
+        "kc-python-call-stack"
+      ]
+    },
+    "kc-python-iteration": {
+      "path": "10-domain/python/kc-python-iteration.md",
+      "relations": [
+        {
+          "target": "dom-python",
+          "type": "part_of"
+        },
+        {
+          "target": "kc-python-recursion",
+          "type": "contrasts_with"
+        }
+      ],
+      "title": "循环与迭代",
+      "type": "concept",
+      "wikilinks": [
+        "dom-python",
+        "kc-python-recursion"
+      ]
+    },
+    "kc-python-memoization": {
+      "path": "10-domain/python/kc-python-memoization.md",
+      "relations": [
+        {
+          "target": "kc-python-recursion",
+          "type": "requires"
+        },
+        {
+          "target": "dom-python",
+          "type": "part_of"
+        }
+      ],
+      "title": "记忆化",
+      "type": "concept",
+      "wikilinks": [
+        "kc-python-recursion",
+        "dom-python"
+      ]
+    },
+    "kc-python-recursion": {
+      "path": "10-domain/python/kc-python-recursion.md",
+      "relations": [
+        {
+          "target": "kc-python-function",
+          "type": "requires"
+        },
+        {
+          "target": "kc-python-call-stack",
+          "type": "requires"
+        },
+        {
+          "target": "dom-python",
+          "type": "part_of"
+        },
+        {
+          "target": "kc-python-iteration",
+          "type": "contrasts_with"
+        }
+      ],
+      "title": "递归",
+      "type": "concept",
+      "wikilinks": [
+        "kc-python-function",
+        "kc-python-call-stack",
+        "dom-python",
+        "kc-python-iteration"
+      ]
+    },
+    "kc-python-stack-overflow": {
+      "path": "10-domain/python/kc-python-stack-overflow.md",
+      "relations": [
+        {
+          "target": "kc-python-call-stack",
+          "type": "requires"
+        },
+        {
+          "target": "kc-python-recursion",
+          "type": "requires"
+        },
+        {
+          "target": "dom-python",
+          "type": "part_of"
+        }
+      ],
+      "title": "栈溢出",
+      "type": "concept",
+      "wikilinks": [
+        "kc-python-call-stack",
+        "kc-python-recursion",
+        "dom-python"
+      ]
+    },
+    "ks-demo-a17-kc-python-base-case": {
+      "path": "20-learner/states/ks-demo-a17-kc-python-base-case.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-base-case",
+          "type": "about"
+        }
+      ],
+      "title": "状态：kc-python-base-case",
+      "type": "state",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-base-case"
+      ]
+    },
+    "ks-demo-a17-kc-python-call-stack": {
+      "path": "20-learner/states/ks-demo-a17-kc-python-call-stack.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-call-stack",
+          "type": "about"
+        },
+        {
+          "target": "ev-demo-a17-003",
+          "type": "supported_by"
+        }
+      ],
+      "title": "状态：kc-python-call-stack",
+      "type": "state",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-call-stack",
+        "ev-demo-a17-003"
+      ]
+    },
+    "ks-demo-a17-kc-python-function": {
+      "path": "20-learner/states/ks-demo-a17-kc-python-function.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-function",
+          "type": "about"
+        },
+        {
+          "target": "ev-demo-a17-001",
+          "type": "supported_by"
+        },
+        {
+          "target": "ev-demo-a17-001-retention",
+          "type": "supported_by"
+        }
+      ],
+      "title": "状态：kc-python-function",
+      "type": "state",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-function",
+        "ev-demo-a17-001",
+        "ev-demo-a17-001-retention"
+      ]
+    },
+    "ks-demo-a17-kc-python-iteration": {
+      "path": "20-learner/states/ks-demo-a17-kc-python-iteration.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-iteration",
+          "type": "about"
+        },
+        {
+          "target": "ev-demo-a17-002-baseline",
+          "type": "supported_by"
+        },
+        {
+          "target": "ev-demo-a17-002",
+          "type": "supported_by"
+        }
+      ],
+      "title": "状态：kc-python-iteration",
+      "type": "state",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-iteration",
+        "ev-demo-a17-002-baseline",
+        "ev-demo-a17-002"
+      ]
+    },
+    "ks-demo-a17-kc-python-memoization": {
+      "path": "20-learner/states/ks-demo-a17-kc-python-memoization.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-memoization",
+          "type": "about"
+        }
+      ],
+      "title": "状态：kc-python-memoization",
+      "type": "state",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-memoization"
+      ]
+    },
+    "ks-demo-a17-kc-python-recursion": {
+      "path": "20-learner/states/ks-demo-a17-kc-python-recursion.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-recursion",
+          "type": "about"
+        },
+        {
+          "target": "ev-demo-a17-004",
+          "type": "supported_by"
+        }
+      ],
+      "title": "状态：kc-python-recursion",
+      "type": "state",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-recursion",
+        "ev-demo-a17-004"
+      ]
+    },
+    "ks-demo-a17-kc-python-stack-overflow": {
+      "path": "20-learner/states/ks-demo-a17-kc-python-stack-overflow.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-stack-overflow",
+          "type": "about"
+        }
+      ],
+      "title": "状态：kc-python-stack-overflow",
+      "type": "state",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-stack-overflow"
+      ]
+    },
+    "res-python-call-stack-contrast": {
+      "path": "30-learning/resources/res-python-call-stack-contrast.md",
+      "relations": [
+        {
+          "target": "kc-python-call-stack",
+          "type": "teaches"
+        },
+        {
+          "target": "kc-python-function",
+          "type": "requires"
+        }
+      ],
+      "title": "调用栈成对对比例题",
+      "type": "resource",
+      "wikilinks": [
+        "kc-python-call-stack",
+        "kc-python-function"
+      ]
+    },
+    "res-python-call-stack-faded": {
+      "path": "30-learning/resources/res-python-call-stack-faded.md",
+      "relations": [
+        {
+          "target": "kc-python-call-stack",
+          "type": "teaches"
+        },
+        {
+          "target": "kc-python-function",
+          "type": "requires"
+        }
+      ],
+      "title": "调用栈逐步撤除支架练习",
+      "type": "resource",
+      "wikilinks": [
+        "kc-python-call-stack",
+        "kc-python-function"
+      ]
+    },
+    "res-python-call-stack-trace": {
+      "path": "30-learning/resources/res-python-call-stack-trace.md",
+      "relations": [
+        {
+          "target": "kc-python-call-stack",
+          "type": "teaches"
+        },
+        {
+          "target": "kc-python-function",
+          "type": "requires"
+        }
+      ],
+      "title": "递归调用栈预测轨迹",
+      "type": "resource",
+      "wikilinks": [
+        "kc-python-call-stack",
+        "kc-python-function"
+      ]
+    },
+    "ses-demo-a17-20260826t063000z": {
+      "path": "20-learner/sessions/ses-demo-a17-20260826t063000z.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "ev-demo-a17-001",
+          "type": "generated"
+        },
+        {
+          "target": "ev-demo-a17-001-retention",
+          "type": "generated"
+        },
+        {
+          "target": "ev-demo-a17-002-baseline",
+          "type": "generated"
+        },
+        {
+          "target": "ev-demo-a17-002",
+          "type": "generated"
+        },
+        {
+          "target": "ev-demo-a17-003",
+          "type": "generated"
+        },
+        {
+          "target": "ev-demo-a17-004",
+          "type": "generated"
+        }
+      ],
+      "title": "递归学习诊断会话",
+      "type": "session",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "ev-demo-a17-001",
+        "ev-demo-a17-001-retention",
+        "ev-demo-a17-002-baseline",
+        "ev-demo-a17-002",
+        "ev-demo-a17-003",
+        "ev-demo-a17-004"
+      ]
+    },
+    "sys-router": {
+      "path": "00-system/ROUTER.md",
+      "relations": [],
+      "title": "理解成本导航入口",
+      "type": "router",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "ses-demo-a17-20260826t063000z",
+        "dom-python"
+      ]
+    },
+    "teach-python-call-stack-trace-v1": {
+      "path": "30-learning/deliveries/teach-python-call-stack-trace-v1.md",
+      "relations": [
+        {
+          "target": "usr-demo-a17",
+          "type": "for_learner"
+        },
+        {
+          "target": "goal-demo-a17-recursion",
+          "type": "for_goal"
+        },
+        {
+          "target": "kc-python-call-stack",
+          "type": "about"
+        },
+        {
+          "target": "res-python-call-stack-trace",
+          "type": "uses"
+        }
+      ],
+      "title": "教学签发：kc-python-call-stack",
+      "type": "teaching_delivery",
+      "wikilinks": [
+        "usr-demo-a17",
+        "goal-demo-a17-recursion",
+        "kc-python-call-stack",
+        "res-python-call-stack-trace"
+      ]
+    },
+    "usr-demo-a17": {
+      "path": "20-learner/usr-demo-a17.md",
+      "relations": [],
+      "title": "匿名学习者 Demo A17",
+      "type": "learner",
+      "wikilinks": [
+        "ev-demo-a17-001",
+        "ev-demo-a17-001-retention",
+        "ev-demo-a17-002-baseline",
+        "ev-demo-a17-002",
+        "ev-demo-a17-003"
+      ]
+    }
+  },
+  "schema": "uc-demo/0.2",
+  "source": "markdown_notes"
+}
