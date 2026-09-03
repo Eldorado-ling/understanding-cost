@@ -7,7 +7,7 @@ active_learner_id: "usr-demo-a17"
 active_goal_id: "goal-demo-a17-recursion"
 last_session_id: "ses-demo-a17-20260826t063000z"
 active_domain_id: "dom-python"
-updated_at: "2026-08-28T03:24:07Z"
+updated_at: "2026-09-03T11:16:49Z"
 privacy: "private"
 tags: ["uc/system"]
 ---

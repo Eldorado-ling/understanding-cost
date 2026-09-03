@@ -1,19 +1,23 @@
-# Demo v0.1.1 状态机与会话协议
+# Demo v0.1.4 状态机与会话协议
 
-本文件与 [v0.1.1 流程图源文件](../review-assets/understanding-cost-flow-v0.1.1.mmd) 是同一执行合同的文字版和图形版；带水印的发布图嵌入在 [SKILL.md](../SKILL.md) 中。三者的版本号、状态、先后顺序、资格门、失败回路和回写语义必须一一对应；任一处发生冲突时，该版本视为未完成，不得选择其中一份继续执行，必须在同一次修改中同时修复。
+本文件与 [v0.1.4 流程图源文件](../review-assets/understanding-cost-flow-v0.1.4.mmd) 是同一执行合同的文字版和图形版；带水印的发布图嵌入在 [SKILL.md](../SKILL.md) 中。三者的版本号、状态、先后顺序、资格门、失败回路和回写语义必须一一对应；任一处发生冲突时，该版本视为未完成，不得选择其中一份继续执行，必须在同一次修改中同时修复。
 
 ## 总状态机
 
 ```text
 INTAKE
+  -> CONFIRM_DATA_MODE
+       -> unconfirmed: ASK_THREE_OPTIONS_AND_WAIT
+       -> create_boundary: CONFIRM_SAVE_SCOPE -> INITIAL_UNKNOWN_STATE_AND_MINIMAL_DIAGNOSIS
+       -> use_existing: CONFIRM_EXACT_SOURCE -> READ_AUTHORIZED_EVIDENCE_AND_CHECK_GAPS
+       -> no_personal_data: CURRENT_QUESTION_ONLY_AND_LOCAL_PRIOR_CHECK
   -> CLASSIFY_MODE
   -> [continue/recover/rebuild] LOCATE_OR_RECOVER -> DEFINE_GOAL_AND_CONTRACT
-  -> [learn-one] HISTORY_DEPENDENCY?
-       -> yes: LOCATE_OR_RECOVER -> DEFINE_GOAL_AND_CONTRACT
-       -> no, pure new and no persistence: DEFINE_GOAL_AND_CONTRACT
+  -> [learn-one] DEFINE_GOAL_AND_CONTRACT
   -> [map-domain] COORDINATION_MAP -> USER_SELECTS_NODE? -> DEFINE_GOAL_AND_CONTRACT | END
   -> [inspect] AUTHORIZED_INSPECT -> CORRECT_OR_DELETE? -> INVALIDATE_DERIVED_AND_RECOMPUTE | END
   -> RECOMPUTE_EXISTING_OR_UNKNOWN_BOUNDARY
+  -> GRAPH_COVERAGE_AND_LEARNER_EVIDENCE_GATE
   -> BUILD_TARGET_SUBGRAPH
   -> BUILD_EXECUTABLE_CANDIDATE_STEPS
   -> HARD_ELIGIBILITY
@@ -27,10 +31,16 @@ INTAKE
   -> [diagnose_now] ISSUE_BOUND_DIAGNOSTIC_PROBE -> VALUE_AND_ENVELOPE_GATE -> APPEND_EVIDENCE_ATOMIC -> RECOMPUTE_BOUNDARY -> BUILD_EXECUTABLE_CANDIDATE_STEPS
   -> [teach_now] SELECT_ACTIVITY_AND_CARRIER
   -> RESOLVE_APPLY_ISSUED_RESOURCE
+  -> PREPARE_COMPACT_TEACHING_BRIEF
+  -> DECLARE_ANCHORS_AND_CAPABILITIES
+  -> AGENT_SEMANTIC_REVIEW_OF_DRAFT_OR_REWRITE
   -> BUILD_VERIFICATION_CONTENT_GUARD
-  -> PROJECT_INITIAL_TEACHING
+  -> TEACHING_BASIS_GATE
+  -> PROJECT_INITIAL_TEACHING_AND_TERM_ORDER_GATE
   -> NO_LEAK_GATE
+  -> ACTUAL_BODY_CONCEPT_COVERAGE_GATE
   -> APPEND_TEACHING_DELIVERY
+  -> AGENT_RECHECK_ACTUAL_PROJECTION_BEFORE_DISPLAY
   -> TEACH
   -> APPEND_PROCESS_EVIDENCE_ATOMIC
   -> UNSEEN_VERIFY
@@ -41,7 +51,13 @@ INTAKE
   -> NEXT_STEP | SCHEDULE_DELAYED_CHECK | COMPLETE | REPLAN
 ```
 
+先选择数据模式，再确认当前目标的必要知识边界，最后才能正式教学。完整定义和未选择时的唯一问句见[学习入口协议](learning-entry.md)。上图中 Vault 发行、回写与排期链仅适用于获准持久化的创建模式，或另获写权限的兼容既有库；初始 unknown 骨架可以在诊断前建立，但不代表已经确认知识边界。
+
+既有库默认只读；无个人数据模式不读个人库。两个非持久化分支执行 `当前目标 → 必要前提确认 → 会话内概念交接 → 最小教学稿 → 同一纯内存正文检查与 Agent 语义复核 → 输出 → 用户作答 → 反馈/局部修复 → 未见检查 → 当轮结果`，不接入上述 Vault writer，也不保存圆锥、画像或保持排期。检查失败先改稿；真前置缺口回到临时路径规划。地图先经模式门，再展示最小领域视图；节点选择不是模式授权。无个人数据模式请求恢复旧记录时须说明冲突并让用户重新选择，不自行读库。
+
 阶段不得交换。尤其禁止：先按兴趣或 `focus_z` 选节点再检查先修；把成本并入 Focus；先随意发诊断题再事后绑定 route；只算 activity 却不解析真实 resource；把尚未签发的教学投影交给用户；让初始生成器读取未见验证题或答案；教学题答对后跳过未见验证；合同判定前提前把路线标记为完成。
+
+`issue-teaching` 内部自动完成依据、投影/防泄漏、登记概念检查和追加校验，没有暂停等待 Agent 语义勾选的回调。Agent 在调用前审草稿，返回后、展示前再审实际投影；尤其不能漏掉过程适配器替换的反馈/下一步。返回稿不合格则不展示，改稿后重新签发，旧记录保留且不能据此伪造用户作答。签发本身不证明用户已收到或已理解。
 
 ## 并发事务与不可变回执
 
@@ -51,7 +67,7 @@ INTAKE
 
 ## 入口与恢复
 
-入口先路由为 `learn-one`、`map-domain`、`continue`、`inspect`、`recover` 或 `rebuild`。
+数据模式确认是入口第一步；其后才路由为 `learn-one`、`map-domain`、`continue`、`inspect`、`recover` 或 `rebuild`。维护者审阅 Skill 本身不构成一轮学习；但任何真实学习分支都不得借只读、试教或纯新问题跳过选择。
 
 ```text
 LOCATE_OR_RECOVER
@@ -61,7 +77,7 @@ LOCATE_OR_RECOVER
   -> EXPLICIT_REBUILD -> CREATE_PROVISIONAL_STATE
 ```
 
-- 不得从 `NO_MATCH` 静默初始化。
+- `LOCATE_OR_RECOVER` 只在模式允许且用户指定精确数据范围后执行，不搜索未授权父目录。不得从 `NO_MATCH` 静默初始化；改用创建模式或换源必须重新确认。
 - `map-domain` 只生成当前判断所需的协调视图；用户选定节点后再进入目标定义。
 - `inspect` 只在用户明确要求时展示可校正、可删除且带来源边界的内部数据；校正后重算派生状态。
 - 重建状态默认 `unknown`，不得根据笔记数量、链接或旧截图补写掌握。
@@ -69,7 +85,7 @@ LOCATE_OR_RECOVER
 
 ## Intake 与掌握合同
 
-最小 intake 字段：当前问题、领域范围、目标表现、使用情境、时间限制、是否要求延迟保持、是否允许保存结构化记录，以及显式 Vault 路径或已知入口。缺少信息时只问当前最能改变安全路径的一到三个问题。
+第一轮先取得明确数据模式，不把它与兴趣/时间/知识测试混问。其后按需取得当前问题、领域范围、目标表现、使用情境、时间限制、是否要求延迟保持，以及创建或既有模式的精确资料/保存范围。缺少信息时只问当前最能改变安全路径的一到三个问题；无个人数据模式不询问数据库位置，也不创建持久化字段。
 
 教学前必须定义：
 
@@ -114,6 +130,12 @@ evidence envelope 不作为学习结果建立 field binding，但必须按 phase
 
 ## 核心一：边界、候选与路径
 
+开始讲解之前必须能说明当前依赖哪些已有知识、哪些仍未知。资料不足时用能改变教学路径的最小诊断；兴趣选择和“学过”不替代诊断。无数据/只读分支仅在会话中使用该判断，不伪造证据文件。以下 canonical evidence、candidate 签发与原子状态要求属于持久化分支；不能为了执行它们而越过只读或无个人数据选择。
+
+边界必须同时输出图谱状态与学习者状态。`derive_boundary_assessments` 的 graph_status 为 `complete / incomplete / unassessed / unmodeled / legacy_unspecified`；后四者不等于用户不会。明确不完整、未评估或缺节点时 `defer_unmodeled`，先修补最小图谱，不能把内部建模缺口转换成用户测试。图谱可用但学习者未知时才 `diagnose_now`；必要前置缺口走 `defer_blocked`，列出有信息价值的未知前置。多层链经过独立掌握节点时不再阻断，但仍保留下层未知的审计原因，不能撤销已验证掌握并强制重学。
+
+`required_contrast_ids` 只选定当前必要辨析对象；其缺口决定内缘及教学对比说明，不变成 requires，也不自动扩大合同。旧 concept 未填 coverage 的兼容状态必须显式说明，不以空 requires 宣称图谱完整。新建图谱只有经 Agent 审核目标必要依赖后才标 complete；这是领域建模声明，不是心理测量。
+
 先从已有 canonical evidence 重算边界；没有证据时保持 `unknown`，不能预填为 `none`。诊断问题应区分至少两个会产生不同安全路径的知识状态。持久化诊断必须先形成 `diagnose_now candidate_step`，绑定真实 resource probe，并通过完整选择与 `issue-route`；之后只发出该 learning issuance 快照中 ID、activity、carrier 唯一匹配的 probe。回答的 evidence 必须精确绑定同一 route，时间不早于 issuance 且不在未来，才会重算 mastery/confidence、诊断快照、误概念和 boundary。停止条件是已足够选出第一条安全路径，不要求一次测完整个领域。
 
 只允许 `requires` 决定先修闭包。先把目标拆成可执行候选步骤，而不是只比较裸 `concept_id`：
@@ -152,6 +174,10 @@ Focus 只消费 `goal_relevance + interest_evidence + readiness`。它可以打�
 
 ## 核心二：活动、表征与教学
 
+解析后使用 `prepare-teaching` 获取 `uc-teaching-brief/0.1`，不要将全图或原始验证资源交给初始教学生成器。简报从同 learner+goal 的附近 canonical state/evidence 重算合格锚点，给出当前合同能力、必要对比、新术语、实际活动/媒介、过程反馈、带来源的成本输入与 opaque guard。v0.1.4 另交接当前概念及本步 requires/related_to/contrasts_with 对象的名称/别名词表 `concept_inventory`。词表供正文查漏，不改变路线或增加先修。`teaching_basis.anchor_ids` 必须来自简报 verified_anchors；`focus_capabilities` 必须是当前合同的非空能力子集。`issue-teaching` 在锁内核对绑定、锚点和能力，再把实际白名单投影交给 `teaching_review.review_teaching_content`；正文或定义引用词表中的未验证概念却未先落地时拒绝签发，即使作者完全漏报 introduced_terms 也不放行。内部词表和检查结果不进入用户投影。词表外的遗漏、概念真假和含义是否充分仍由 Agent 审阅，程序不是自然语言证明器。
+
+`teaching_basis` 还必须绑定当前 `route_binding_id / decision_fingerprint / brief_fingerprint`；简报指纹覆盖内容和同范围当前证据 revision，不因时钟每次读而任意变化。目标、证据或 route 漂移时拒绝旧草稿。简报与签发使用同一已存储决策 epoch；要选择新方法先 resolve，再重新准备。`routing_action` 与 `process_next_action` 不可混用，诊断时只发当前签发资源的 diagnostic_probe。
+
 选定步骤必须把当前 `route_id + route_version + bound_verification_task_id` 一并交给核心二，不能只传裸 `concept_id`。随后读取 [personalization.md](personalization.md) 的同情境响应观察；`context_key` 必须由领域、知识类型、目标表现、先验区间和任务难度生成，不能接受任意相似标签。每条观察只能由生产入口从已通过 Vault 校验的 state `supported_by` canonical 窗口、原始 contract 与 route issuance 反查后重算；调用者不得直接提交窗口或 `mastery_gate_met`。孤立 evidence 不进入画像。方法效果只消费绑定已签发任务的独立 verification/retention；同一 route binding 的同一 task 只允许一条 canonical 观察，重试必须签发新的 task 或 route/version，复制文件、换 evidence ID 或自造 item ID 都按 replay 拒绝。teaching_process 允许对同一已签发教学项逐次追加真实重试，但只进入错误修复、反馈、载体升级与实测成本通道，不进入方法效果 Pareto 或 mastery 门槛。与当前决策比较时允许 concept/contract 不同，但必须同一学习者、同一规范 `context_key`、同一 comparison gate，历史帮助强度不超过当前允许上限，且低观察置信度记录不能进入画像 Pareto。只有达到跨知识点画像使用门槛并形成唯一 Pareto 优势的历史方案才能改变 activity/carrier；无可靠占优方案时回到知识机制默认，并保留小规模、单变量探索。
 
 这里的规范 `context_key` 只能从已校验的 `uc-route-bindings/0.2` 顺序签发事件中读取 `comparison_context` 后派生，不能信任 evidence 自带标签。签发账本用连续 `sequence + previous_hash + event_hash` 和 manifest 的 anchor/head/length 检查普通删改、重排与截断；本地事件还必须有封闭的 `route_purpose=learning|retention`，且 `issued_at` 不在未来。事件冻结 route scope、最终选中 resource/intervention、未见验证任务及三类指纹；其他候选只以规范成本记录和 resource 指纹进入 `selection_decision.candidate_costs`。新任务还要按完整 task fingerprint 去重，不能只换 task ID 复用同一题。active learning route 还必须与当前 Markdown 节点逐项一致。合成 Demo 的 seed 前缀与 Vault 外 seed 重建结果相等；其本地追加段和 generic `local_chain_only` Vault 都必须返回明确的信任边界 warning。
@@ -171,7 +197,7 @@ text_dialogue diagnosis
 
 静态图示属于文字闭环的辅助表征，可在首次解释中直接使用。视频或交互只有在目标本身具有非文字硬需求、同情境证据显示其 Pareto 占优，或重复文字失败通过升级门时才可选择。
 
-任何解释都必须满足依赖闭包：只依赖已验证知识锚点和本单元已经落地的概念。兴趣锚点只能提供情境和动机，不能承担推理。新承重术语先解释“是什么、属于谁/在哪里、本例作用、关系方向”，再用小问题确认；真正的前置缺口返回核心一。
+任何解释都必须满足依赖闭包：只依赖已验证知识锚点和本单元已经落地的概念。兴趣锚点只能提供情境和动机，不能承担推理。新承重术语先解释“是什么、属于谁/在哪里、本例作用、关系方向”，拒绝明显占位和循环自称，再用小问题确认；真正的前置缺口返回核心一。新模型/算法按“问题 → 表示的含义 → 最小例子 → 等待用户说明 → 按需公式”推进，不在等待前提前给完整公式推导。提过名称或已讲过不等于用户懂，更不直接改 mastery。具体正文、只读执行与失败示例见[文字教学](text-learning.md)。
 
 ## 教学、过程证据与独立验证
 
@@ -255,6 +281,8 @@ RECOMPUTE_CONCEPT_CONTRACT
            -> SCHEDULE_RETENTION_AND_APPEND_RECEIPT
            -> SAVE_CHECKPOINT_AND_WAIT
         -> pending_before_scheduled_for -> SAVE_CHECKPOINT_AND_WAIT
+           -> [user proactively reviews] NEW_LEARNING_TASK_AND_INDEPENDENT_VERIFICATION
+           -> [old schedule unopened and still pending] NEW_RETENTION_BINDING_AND_SUPERSEDING_SCHEDULE
         -> due
            -> OPEN_DELAYED_AND_APPEND_OR_REUSE_OPEN_RECEIPT
            -> DELAYED_VERIFY_AT_A0
@@ -273,6 +301,14 @@ RECOMPUTE_CONCEPT_CONTRACT
 必须分开保存 `immediate_contract_status`、`retention_status` 与完整 `contract_status`。即时要求满足但所需延迟检查尚未通过时，`immediate_contract_status=met`、`retention_status=not_started|pending|due`、`contract_status=in_progress`；这不是概念错误，不回到概念教学，只进入保持安排。先用 `issue-route(purpose=retention)` 签发不同 task fingerprint，并在发行事件中显式冻结唯一 `baseline_evidence_id`；再用 `schedule-retention` 要求 schedule baseline 与 issuance baseline 精确相等，并从 `baseline + min_delay_days + 可选 not_before` 内部派生 `scheduled_for`，追加不可变 `retention_schedule` receipt；state 只引用当前 receipt。若派生时间已经过去，直接为 `due`，不能制造新的未来等待。到期后 `open-delayed-verification` 必须先原子追加或幂等复用 `verification_open` receipt，写失败不得显示题面；只把 `user_task` 投影给用户。retention evidence 的 `teaching_item_id` 必须引用该 open receipt，validator 重算 open → schedule → issuance、精确 baseline 及 `scheduled_at <= opened_at < observed_at`。保持失败后只有更新且合格的新 verification baseline 才能签发不同任务并追加 superseding schedule；旧 receipts/evidence 保留历史，不与 state 当前 schedule 强行等同。
 
 ## 主线、支线与循环保护
+
+### 主动复习的基线更新
+
+主动复习只在旧排期尚未到期、没有任何开题回执时允许：新 learning issuance 和合格 A0 verification 均必须晚于旧 schedule；新证据属于同一 learner/goal/concept/contract/version，且是当前合格通过集合的一部分。随后签发全新 retention task/binding，并追加 `supersedes_schedule_id` 指向旧回执的 schedule；`not_before` 必须为 null。新检查日期由新 baseline + 合同最小延迟派生，不允许借此自选额外延期。已经 due 或 opened 时必须继续原检查。返回 `schedule_reason=initial|failed_retention_repair|proactive_review` 供恢复/审计，不另存一个可篡改的事实字段。旧回执、证据和账本前缀保持不变；历史校验按当时截止时间重算，后续失败不回写历史通过。
+
+### 请求内读取复用
+
+`validate` 与 `resolve-teaching` 在一次操作中复用私有解析快照，消费方拿到独立副本；每次公开入口仍从磁盘重新读取。写后重新扫描，保留完整校验、事务锁、CAS 与失败回滚。没有跨请求缓存或 SQLite；不把文件 I/O 改善误报成模型 Token 节省。
 
 - 同一 `learner_id + goal_id` 至多一条 `active` 路线。
 - 激活支线与暂停主线必须作为同一次状态转换；返回时先结束或暂停支线，再恢复主线断点。

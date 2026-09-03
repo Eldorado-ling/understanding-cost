@@ -100,6 +100,7 @@ USER_FORBIDDEN_KEYS = {
     "context_key",
     "consumer_ids",
     "concept_id",
+    "concept_inventory",
     "contract_id",
     "contract_status",
     "contract_version",
@@ -119,6 +120,8 @@ USER_FORBIDDEN_KEYS = {
     "input_source_refs",
     "interest_evidence",
     "introduced_terms",
+    "required_terms",
+    "terms_to_ground",
     "learner_id",
     "mastery_eligible",
     "mastery_gate_derivation",
@@ -164,6 +167,11 @@ USER_FORBIDDEN_KEYS = {
     "verification_task",
     "verification_task_id",
     "verification_content_guard",
+    "teaching_basis",
+    "verified_anchors",
+    "verified_concept_ids",
+    "focus_capabilities",
+    "cost_inputs",
     "protected_content_fingerprints",
     "visual_support",
 }
@@ -2775,6 +2783,45 @@ def decide_text_activity(context: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+_GROUNDING_PLACEHOLDERS = {
+    "", "todo", "tbd", "placeholder", "unknown", "idontknow", "idon'tknow",
+    "不知道", "不清楚", "待解释", "待补充", "待填写", "待确认", "待完善",
+    "稍后解释", "稍后补充", "未说明", "暂无",
+}
+
+
+def _grounding_text_key(value: str) -> str:
+    normalized = unicodedata.normalize("NFKC", value).casefold()
+    normalized = re.sub(r"[\"'`“”‘’]", "", normalized)
+    return re.sub(r"\s+", " ", normalized).strip(
+        " \t\r\n.,;:!?。，；：！？…()（）[]【】<>"
+    )
+
+
+def _validate_grounding_meaning(item: dict[str, str], index: int) -> None:
+    """Reject a finite set of obvious non-definitions, not semantic inadequacy.
+
+No minimum length is imposed. Passing this check does not establish that a
+definition is true, sufficient, non-circular in general, or understood.
+"""
+    for field in ("what_it_is", "owner_scope", "role_here", "relation_direction"):
+        key = _grounding_text_key(item[field])
+        if key.replace(" ", "") in _GROUNDING_PLACEHOLDERS:
+            raise TextPolicyError(f"term_grounding[{index}].{field} 不能用占位或未解释说明代替具体含义")
+    term = _grounding_text_key(item["term"])
+    definition = _grounding_text_key(item["what_it_is"])
+    if not term:
+        return
+    escaped = re.escape(term)
+    repetition_patterns = (
+        escaped,
+        rf"(?:所谓(?:的)?\s*)?{escaped}\s*[,，]?\s*(?:就是|是|即|指的是|指的就是|指|的意思是)\s*(?:一个|一种)?\s*{escaped}",
+        rf"(?:(?:a|an|the) )?{escaped}\s+(?:is|means|refers to|is defined as)\s+(?:(?:a|an|the) )?{escaped}",
+    )
+    if any(re.fullmatch(pattern, definition) for pattern in repetition_patterns):
+        raise TextPolicyError(f"term_grounding[{index}].what_it_is 不能只把术语重复为其自身；请说明具体含义")
+
+
 def _validate_term_grounding(
     introduced_terms: list[str], value: Any
 ) -> list[dict[str, str]]:
@@ -2799,6 +2846,21 @@ def _validate_term_grounding(
     expected = [item.casefold() for item in introduced_terms]
     if sorted(actual) != sorted(expected) or len(actual) != len(expected):
         raise TextPolicyError("term_grounding 必须逐项覆盖 introduced_terms，且不得多出术语")
+    for index, item in enumerate(grounded):
+        _validate_grounding_meaning(item, index)
+    # A declared new term cannot be explained using another declared term that
+    # appears only later. This is a literal dependency check, not NLP mastery.
+    for index, item in enumerate(grounded):
+        definitions = " ".join(item[key] for key in required if key != "term").casefold()
+        for later in grounded[index + 1:]:
+            term = later["term"].casefold()
+            pattern = re.escape(term)
+            if term.isascii():
+                pattern = r"(?<![A-Za-z0-9_])" + pattern + r"(?![A-Za-z0-9_])"
+            if re.search(pattern, definitions):
+                raise TextPolicyError(
+                    f"术语 {item['term']} 的解释依赖尚未落地的 {later['term']}；先解释依赖或改用已知语言"
+                )
     return grounded
 
 

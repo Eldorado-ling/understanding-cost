@@ -5,8 +5,8 @@ type: "learner"
 title: "匿名学习者 Demo A17"
 learner_id: "demo-a17"
 language: "zh-CN"
-created_at: "2026-08-28T03:24:07Z"
-updated_at: "2026-08-28T03:24:07Z"
+created_at: "2026-09-03T11:16:49Z"
+updated_at: "2026-09-03T11:16:49Z"
 privacy: "private"
 tags: ["uc/learner"]
 ---

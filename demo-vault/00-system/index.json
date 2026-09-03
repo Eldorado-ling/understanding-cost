@@ -1,6 +1,6 @@
 {
   "errors": [],
-  "generated_at": "2026-08-28T03:24:07Z",
+  "generated_at": "2026-09-03T11:16:50Z",
   "node_count": 37,
   "nodes": {
     "dom-python": {
@@ -124,8 +124,8 @@
         "ses-demo-a17-20260826t063000z"
       ]
     },
-    "focus-demo-a17-goal-demo-a17-recursion-kc-python-base-case-20260828t032407z": {
-      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-base-case-20260828t032407z.md",
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-base-case-20260903t111649z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-base-case-20260903t111649z.md",
       "relations": [
         {
           "target": "usr-demo-a17",
@@ -148,8 +148,8 @@
         "kc-python-base-case"
       ]
     },
-    "focus-demo-a17-goal-demo-a17-recursion-kc-python-call-stack-20260828t032407z": {
-      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-call-stack-20260828t032407z.md",
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-call-stack-20260903t111649z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-call-stack-20260903t111649z.md",
       "relations": [
         {
           "target": "usr-demo-a17",
@@ -172,8 +172,8 @@
         "kc-python-call-stack"
       ]
     },
-    "focus-demo-a17-goal-demo-a17-recursion-kc-python-function-20260828t032407z": {
-      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-function-20260828t032407z.md",
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-function-20260903t111649z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-function-20260903t111649z.md",
       "relations": [
         {
           "target": "usr-demo-a17",
@@ -196,8 +196,8 @@
         "kc-python-function"
       ]
     },
-    "focus-demo-a17-goal-demo-a17-recursion-kc-python-iteration-20260828t032407z": {
-      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-iteration-20260828t032407z.md",
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-iteration-20260903t111649z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-iteration-20260903t111649z.md",
       "relations": [
         {
           "target": "usr-demo-a17",
@@ -220,8 +220,8 @@
         "kc-python-iteration"
       ]
     },
-    "focus-demo-a17-goal-demo-a17-recursion-kc-python-memoization-20260828t032407z": {
-      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-memoization-20260828t032407z.md",
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-memoization-20260903t111649z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-memoization-20260903t111649z.md",
       "relations": [
         {
           "target": "usr-demo-a17",
@@ -244,8 +244,8 @@
         "kc-python-memoization"
       ]
     },
-    "focus-demo-a17-goal-demo-a17-recursion-kc-python-recursion-20260828t032407z": {
-      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-recursion-20260828t032407z.md",
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-recursion-20260903t111649z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-recursion-20260903t111649z.md",
       "relations": [
         {
           "target": "usr-demo-a17",
@@ -268,8 +268,8 @@
         "kc-python-recursion"
       ]
     },
-    "focus-demo-a17-goal-demo-a17-recursion-kc-python-stack-overflow-20260828t032407z": {
-      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-stack-overflow-20260828t032407z.md",
+    "focus-demo-a17-goal-demo-a17-recursion-kc-python-stack-overflow-20260903t111649z": {
+      "path": "30-learning/visuals/snapshots/focus-demo-a17-goal-demo-a17-recursion-kc-python-stack-overflow-20260903t111649z.md",
       "relations": [
         {
           "target": "usr-demo-a17",

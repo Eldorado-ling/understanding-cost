@@ -17,14 +17,14 @@ retention_status: "not_started"
 next_action: "immediate_repair"
 valid_context: "两层 Python 函数调用轨迹"
 as_of: "2026-08-26T06:20:00Z"
-evaluated_at: "2026-08-28T03:24:07Z"
+evaluated_at: "2026-09-03T11:16:49Z"
 last_independent_evidence_at: null
 boundary_derived_at: "2026-08-26T06:20:00Z"
 last_assessed_at: "2026-08-26T06:20:00Z"
 misconception_flags: []
 diagnostic_snapshot: null
-created_at: "2026-08-28T03:24:07Z"
-updated_at: "2026-08-28T03:24:07Z"
+created_at: "2026-09-03T11:16:49Z"
+updated_at: "2026-09-03T11:16:49Z"
 privacy: "private"
 tags: ["uc/state", "uc/state/unknown"]
 ---

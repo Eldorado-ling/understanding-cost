@@ -1,6 +1,6 @@
 # append-evidence 输入模板
 
-四个 JSON 文件与 `scripts/vault_tool.py` 的 `APPEND_EVIDENCE_RAW_FIELDS` 一一对应。使用规则：
+四个 JSON 文件与 `scripts/vault_tool.py` 的 `APPEND_EVIDENCE_RAW_FIELDS` 一一对应。v0.1.3 仅在已通过[数据模式与写授权](../../references/learning-entry.md)的持久化分支使用；只读/无个人数据学习不创建这些记录。CLI 还需已确认的模式、消息引用和精确根目录参数，见[维护者指南](../../references/maintainer-guide.md)。使用规则：
 
 1. 复制当前 phase 的模板到工作文件，不要直接改模板；
 2. 替换所有以 `$` 开头的占位值；保留该 phase 已写好的 `null`、`false`、`not_tested` 等哨兵；

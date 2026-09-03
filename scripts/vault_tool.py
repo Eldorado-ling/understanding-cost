@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import copy
 import functools
 import hashlib
 import importlib.util
@@ -70,6 +71,8 @@ PROCESS_REFRESH_FIELDS = (
     "resolved_process_support_load",
 )
 SEED_PATH = Path(__file__).resolve().parent.parent / "assets" / "demo-seed.json"
+LEGACY_SEED_PATH = SEED_PATH.with_name("demo-seed-v0.1.1.json")
+CURRENT_SEED_VERSION = "0.1.2"
 ROUTE_TRUST_LEVEL_VALUES = {
     "local_chain_only",
     "trusted_seed_source",
@@ -1028,27 +1031,168 @@ def derive_state_knowledge_status(
 def derive_boundary_positions(
     concept_relations: dict[str, list[dict[str, str]]],
     mastery_by_concept: dict[str, str],
+    *,
+    concept_metadata: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, str]:
-    """Derive graph boundary from mastered prerequisites and contrasts."""
+    """Compatibility projection; detailed reasons drive route/teaching consumers."""
 
-    positions: dict[str, str] = {}
+    return {
+        concept_id: assessment["boundary_position"]
+        for concept_id, assessment in derive_boundary_assessments(
+            concept_relations, mastery_by_concept, concept_metadata=concept_metadata
+        ).items()
+    }
+
+
+def derive_boundary_assessments(
+    concept_relations: dict[str, list[dict[str, str]]],
+    mastery_by_concept: dict[str, str],
+    *,
+    concept_metadata: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, dict[str, Any]]:
+    """Separate graph coverage from learner evidence without invented confidence.
+
+    Missing coverage metadata preserves old route behavior, but is explicitly
+    ``legacy_unspecified``, never proof of a complete graph.  An authored
+    incomplete/unassessed prerequisite frontier blocks teaching.  Traversal
+    stops at independently mastered prerequisite nodes for gating, while the
+    full transitive chain remains auditable; an untested lower concept must not
+    erase already demonstrated mastery.  Contrasts are optional unless selected
+    by ``required_contrast_ids``.
+    """
+
+    metadata = concept_metadata or {}
+    requirements = {
+        concept_id: sorted({r["target"] for r in relations if r.get("type") == "requires"})
+        for concept_id, relations in concept_relations.items()
+    }
+    assessments: dict[str, dict[str, Any]] = {}
     for concept_id, mastery in mastery_by_concept.items():
-        relations = concept_relations.get(concept_id, [])
-        requires = [item["target"] for item in relations if item.get("type") == "requires"]
-        contrasts = [
-            item["target"] for item in relations if item.get("type") == "contrasts_with"
-        ]
+        direct = requirements.get(concept_id, [])
+        frontier: set[str] = set()
+        all_dependencies: set[str] = set()
+
+        for audit_only in (False, True):
+            pending = [concept_id]
+            seen: set[str] = set()
+            while pending:
+                node_id = pending.pop()
+                if node_id in seen:
+                    continue
+                seen.add(node_id)
+                if audit_only:
+                    if node_id != concept_id:
+                        all_dependencies.add(node_id)
+                else:
+                    frontier.add(node_id)
+                    if node_id != concept_id and mastery_by_concept.get(node_id) == "mastered":
+                        continue
+                pending.extend(requirements.get(node_id, []))
+        missing = sorted(node for node in frontier if node not in concept_relations)
+        incomplete = sorted(
+            node for node in frontier
+            if metadata.get(node, {}).get("prerequisite_coverage") == "incomplete"
+            and (node == concept_id or mastery_by_concept.get(node) != "mastered")
+        )
+        unassessed = sorted(
+            node for node in frontier
+            if metadata.get(node, {}).get("prerequisite_coverage") == "unassessed"
+            and (node == concept_id or mastery_by_concept.get(node) != "mastered")
+        )
+        legacy = sorted(
+            node for node in frontier
+            if node in concept_relations
+            and "prerequisite_coverage" not in metadata.get(node, {})
+            and (node == concept_id or mastery_by_concept.get(node) != "mastered")
+        )
+        graph_status = (
+            "unmodeled" if missing else "incomplete" if incomplete
+            else "unassessed" if unassessed else "legacy_unspecified" if legacy else "complete"
+        )
+        gaps = sorted(node for node in direct if mastery_by_concept.get(node) != "mastered")
+        unknown = sorted(
+            node for node in frontier - {concept_id}
+            if node in concept_relations and mastery_by_concept.get(node, "unknown") == "unknown"
+        )
+        contrast_ids = metadata.get(concept_id, {}).get("required_contrast_ids", [])
+        contrast_gaps = sorted(
+            node for node in (contrast_ids if isinstance(contrast_ids, list) else [])
+            if isinstance(node, str)
+            if mastery_by_concept.get(node) != "mastered"
+        )
+        reasons: list[str] = []
         if mastery == "mastered":
-            positions[concept_id] = (
-                "inner_fringe"
-                if any(mastery_by_concept.get(target) != "mastered" for target in contrasts)
-                else "interior"
-            )
-        elif all(mastery_by_concept.get(target) == "mastered" for target in requires):
-            positions[concept_id] = "outer_fringe"
+            position = "inner_fringe" if contrast_gaps else "interior"
+            action = "exclude_mastered"
+            reasons.append("mastery_contract_met")
+            if contrast_gaps:
+                reasons.append("required_contrast_gap")
+        elif graph_status in {"unmodeled", "incomplete", "unassessed"}:
+            position, action = "unknown", "defer_unmodeled"
+            reasons.append("graph_" + graph_status)
+        elif gaps:
+            position, action = "blocked", "defer_blocked"
+            reasons.append("prerequisite_gap")
+            if unknown:
+                reasons.append("learner_prerequisite_unknown")
         else:
-            positions[concept_id] = "blocked"
-    return positions
+            position = "outer_fringe"
+            action = "diagnose_now" if mastery == "unknown" else "teach_now"
+            reasons.append("learner_unknown" if mastery == "unknown" else "prerequisites_satisfied")
+        if legacy:
+            reasons.append("legacy_coverage_unspecified")
+        audit_unknown = sorted(
+            node for node in all_dependencies
+            if node in concept_relations and mastery_by_concept.get(node, "unknown") == "unknown"
+        )
+        if set(audit_unknown) - set(unknown):
+            reasons.append("transitive_unknown_covered_by_mastered_prerequisite")
+        assessments[concept_id] = {
+            "boundary_position": position,
+            "graph_status": graph_status,
+            "learner_status": mastery,
+            "next_action": action,
+            "reason_codes": reasons,
+            "blocking_prerequisite_ids": gaps,
+            "diagnostic_concept_ids": (
+                [concept_id] if action == "diagnose_now" else unknown if action == "defer_blocked" else []
+            ),
+            "graph_issue_ids": sorted(set(missing + incomplete + unassessed)),
+            "required_contrast_gap_ids": contrast_gaps,
+            "transitive_unknown_ids": audit_unknown,
+            "transitive_unmodeled_ids": sorted(node for node in all_dependencies if node not in concept_relations),
+        }
+    return assessments
+
+
+def _boundary_cache_matches(stored: Any, expected: str, mastery: Any, concept: dict[str, Any]) -> bool:
+    # Old Vaults counted every contrast as mandatory.  Their mastered-only
+    # inner-fringe cache remains readable until the next evidence recomputation;
+    # this exception cannot grant teaching eligibility or mastery.
+    return stored == expected or bool(
+        stored == "inner_fringe" and expected == "interior" and mastery == "mastered"
+        and "required_contrast_ids" not in concept
+    )
+
+
+def boundary_assessments_for_scope(
+    index: dict[str, Any], all_meta: dict[str, dict[str, Any]], learner_id: str, goal_id: str
+) -> dict[str, dict[str, Any]]:
+    """Recompute the scoped route gate; never trust a cached boundary label."""
+    return derive_boundary_assessments(
+        {
+            node_id: list(node.get("relations", []))
+            for node_id, node in index.get("nodes", {}).items()
+            if node.get("type") == "concept"
+        },
+        {
+            str(meta["concept_id"]): str(meta.get("mastery", "unknown"))
+            for meta in all_meta.values()
+            if meta.get("type") == "state"
+            and meta.get("learner_id") == learner_id and meta.get("goal_id") == goal_id
+        },
+        concept_metadata=all_meta,
+    )
 
 
 def derived_retention_delay_days(
@@ -1809,6 +1953,22 @@ def load_route_binding_registry(
     return registry, validated_events, errors
 
 
+def _trusted_seed_for_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
+    """Select only a bundled authority; absent version means the frozen old seed.
+
+    Version is a selector, never proof: callers still rebuild and compare the
+    complete trusted prefix. No path from a Vault can choose an authority file.
+    """
+    version = manifest.get("seed_version", "0.1.1")
+    if version == "0.1.1":
+        path = LEGACY_SEED_PATH
+    elif version == CURRENT_SEED_VERSION:
+        path = SEED_PATH
+    else:
+        raise VaultError(f"未知 trusted seed_version: {version!r}")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def validate_route_binding_authority(
     vault: Path, manifest: dict[str, Any]
 ) -> tuple[list[str], list[str]]:
@@ -1856,7 +2016,7 @@ def validate_route_binding_authority(
         errors.append("trusted_seed_source 必须指向 assets/demo-seed.json")
         return errors, warnings
     try:
-        trusted_seed = json.loads(SEED_PATH.read_text(encoding="utf-8"))
+        trusted_seed = _trusted_seed_for_manifest(manifest)
         expected_vault_id = trusted_seed["vault"]["id"]
         if manifest.get("vault_id") != expected_vault_id:
             errors.append("trusted seed 的 vault_id 与 manifest 不一致")
@@ -2267,6 +2427,7 @@ def seed_demo(vault: Path) -> None:
         "last_session_id": vault_data["last_session_id"],
         "reconstruction_status": "synthetic_demo",
         "seed_source": "assets/demo-seed.json",
+        "seed_version": CURRENT_SEED_VERSION,
         "route_trust_level": "trusted_seed_source",
     }
     route_binding_document = build_route_binding_document(seed, manifest)
@@ -2323,6 +2484,8 @@ def seed_demo(vault: Path) -> None:
             "graph_x": concept["graph_x"],
             "graph_y": concept["graph_y"],
             "content_provenance": "synthetic_authored_demo",
+            "prerequisite_coverage": concept.get("prerequisite_coverage", "complete"),
+            "required_contrast_ids": concept.get("required_contrast_ids", []),
             "created_at": now,
             "updated_at": now,
             "privacy": "shared",
@@ -2673,6 +2836,13 @@ def seed_demo(vault: Path) -> None:
             concept_id: derived["knowledge"]["mastery"]
             for concept_id, derived in state_derivations.items()
         },
+        concept_metadata={
+            concept["id"]: {
+                "prerequisite_coverage": concept.get("prerequisite_coverage", "complete"),
+                "required_contrast_ids": concept.get("required_contrast_ids", []),
+            }
+            for concept in seed["concepts"]
+        },
     )
     for state in seed["states"]:
         state_id = f"ks-{learner['learner_id']}-{state['concept_id']}"
@@ -3022,12 +3192,41 @@ def seed_demo(vault: Path) -> None:
     resolve_active_teaching(vault, write=True)
 
 
+class _VaultReadSnapshot:
+    """Private, request-local Markdown scan; consumers receive isolated copies.
+
+    No snapshot is accepted by a public entrypoint or kept between requests.
+    It contains parsed facts, not a validation result or permission to write.
+    """
+
+    def __init__(
+        self,
+        index: dict[str, Any],
+        errors: list[str],
+        notes: dict[str, tuple[dict[str, Any], str, list[str]]],
+    ) -> None:
+        self._index = index
+        self._errors = tuple(errors)
+        self._notes = notes
+
+    def index_result(self) -> tuple[dict[str, Any], list[str]]:
+        return copy.deepcopy(self._index), list(self._errors)
+
+    def read_note(self, relative: str) -> tuple[dict[str, Any], str, list[str]]:
+        return copy.deepcopy(self._notes[relative])
+
+
 def build_index(vault: Path) -> tuple[dict[str, Any], list[str]]:
+    return _read_vault_snapshot(vault).index_result()
+
+
+def _read_vault_snapshot(vault: Path) -> _VaultReadSnapshot:
     errors: list[str] = []
     nodes: dict[str, dict[str, Any]] = {}
     id_paths: dict[str, str] = {}
     stem_ids: dict[str, list[str]] = {}
     notes: list[tuple[Path, dict[str, Any], str]] = []
+    parsed_notes: dict[str, tuple[dict[str, Any], str, list[str]]] = {}
 
     for path in sorted(vault.rglob("*.md")):
         if any(part in SKIP_DIRS for part in path.relative_to(vault).parts):
@@ -3035,6 +3234,7 @@ def build_index(vault: Path) -> tuple[dict[str, Any], list[str]]:
         meta, body, parse_errors = parse_note(path)
         errors.extend(parse_errors)
         relative = path.relative_to(vault).as_posix()
+        parsed_notes[relative] = (meta, body, parse_errors)
         note_id = str(meta.get("id", ""))
         if not note_id:
             errors.append(f"缺少 id: {relative}")
@@ -3098,7 +3298,7 @@ def build_index(vault: Path) -> tuple[dict[str, Any], list[str]]:
         "nodes": nodes,
         "errors": sorted(set(errors)),
     }
-    return index, sorted(set(errors))
+    return _VaultReadSnapshot(index, sorted(set(errors)), parsed_notes)
 
 
 def validate_vault(
@@ -3107,6 +3307,22 @@ def validate_vault(
     allow_route_marker_issue: bool = False,
     allow_active_route_ambiguity: bool = False,
     allow_unresolved_teaching: bool = False,
+) -> tuple[list[str], list[str], dict[str, Any]]:
+    return _validate_vault_snapshot(
+        vault,
+        allow_route_marker_issue=allow_route_marker_issue,
+        allow_active_route_ambiguity=allow_active_route_ambiguity,
+        allow_unresolved_teaching=allow_unresolved_teaching,
+    )
+
+
+def _validate_vault_snapshot(
+    vault: Path,
+    *,
+    allow_route_marker_issue: bool = False,
+    allow_active_route_ambiguity: bool = False,
+    allow_unresolved_teaching: bool = False,
+    _snapshot: _VaultReadSnapshot | None = None,
 ) -> tuple[list[str], list[str], dict[str, Any]]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -3199,7 +3415,8 @@ def validate_vault(
             else:
                 owners[identity] = str(event.get("binding_id"))
 
-    index, index_errors = build_index(vault)
+    snapshot = _snapshot if _snapshot is not None else _read_vault_snapshot(vault)
+    index, index_errors = snapshot.index_result()
     errors.extend(index_errors)
     node_meta: dict[str, dict[str, Any]] = {}
     node_body: dict[str, str] = {}
@@ -3209,7 +3426,7 @@ def validate_vault(
 
     for node_id, node in index.get("nodes", {}).items():
         path = vault / node["path"]
-        meta, body, _ = parse_note(path)
+        meta, body, _ = snapshot.read_note(node["path"])
         node_meta[node_id] = meta
         node_body[node_id] = body
         if meta.get("schema") != SCHEMA:
@@ -3226,6 +3443,24 @@ def validate_vault(
                 warnings.append(f"concept 缺少 content_provenance: {node['path']}")
             if meta.get("knowledge_kind") not in KNOWLEDGE_KIND_VALUES:
                 errors.append(f"concept knowledge_kind 非法: {node['path']}")
+            if "prerequisite_coverage" in meta and (
+                not isinstance(meta.get("prerequisite_coverage"), str)
+                or meta.get("prerequisite_coverage") not in {"complete", "incomplete", "unassessed"}
+            ):
+                errors.append(f"concept prerequisite_coverage 非法: {node['path']}")
+            if "required_contrast_ids" in meta:
+                required_contrasts = meta.get("required_contrast_ids")
+                contrasts = {
+                    relation["target"] for relation in node.get("relations", [])
+                    if relation.get("type") == "contrasts_with"
+                }
+                if (
+                    not isinstance(required_contrasts, list)
+                    or any(not isinstance(item, str) or not item.strip() for item in required_contrasts)
+                    or len(required_contrasts) != len(set(item for item in required_contrasts if isinstance(item, str)))
+                    or any(item not in contrasts for item in required_contrasts)
+                ):
+                    errors.append(f"concept required_contrast_ids 必须是 contrasts_with 的唯一子集: {node['path']}")
 
         if node_type == "state":
             for required in ("misconception_flags", "diagnostic_snapshot"):
@@ -3565,7 +3800,7 @@ def validate_vault(
                         source_session_id, {}
                     )
                     source_session = (
-                        parse_note(vault / source_session_node["path"])[0]
+                        snapshot.read_note(source_session_node["path"])[0]
                         if source_session_node.get("path")
                         else {}
                     )
@@ -4247,7 +4482,7 @@ def validate_vault(
                 errors.append(f"intervention current_activity_id 未由 uses 绑定: {node['path']}")
             elif activity_id in index.get("nodes", {}):
                 resource_node = index["nodes"][activity_id]
-                resource_meta, _, resource_parse_errors = parse_note(vault / resource_node["path"])
+                resource_meta, _, resource_parse_errors = snapshot.read_note(resource_node["path"])
                 if resource_parse_errors or resource_node.get("type") != "resource":
                     errors.append(f"intervention current_activity_id 不是有效 resource: {node['path']}")
                 else:
@@ -4469,8 +4704,8 @@ def validate_vault(
                 selected_resource_meta = node_meta.get(selected_resource_id, {})
                 selected_resource_node = index.get("nodes", {}).get(selected_resource_id)
                 if not selected_resource_meta and isinstance(selected_resource_node, dict):
-                    selected_resource_meta, _, _ = parse_note(
-                        vault / selected_resource_node["path"]
+                    selected_resource_meta, _, _ = snapshot.read_note(
+                        selected_resource_node["path"]
                     )
                 if meta.get("resolved_activity") not in selected_resource_meta.get(
                     "supported_activities", []
@@ -4708,12 +4943,14 @@ def validate_vault(
         )
     for (learner_id, goal_id), mastery_by_concept in state_groups.items():
         expected_boundaries = derive_boundary_positions(
-            concept_relation_map, mastery_by_concept
+            concept_relation_map, mastery_by_concept, concept_metadata=node_meta
         )
         for concept_id, expected_boundary in expected_boundaries.items():
             state_id = state_keys[(learner_id, goal_id, concept_id)]
             stored_boundary = node_meta[state_id].get("boundary_position")
-            if stored_boundary != expected_boundary:
+            if not _boundary_cache_matches(
+                stored_boundary, expected_boundary, mastery_by_concept[concept_id], node_meta.get(concept_id, {})
+            ):
                 errors.append(
                     f"state boundary_position 不是图谱与 mastery 推导值: {state_id} "
                     f"stored={stored_boundary} derived={expected_boundary}"
@@ -4912,6 +5149,7 @@ def validate_vault(
             if expected_previous:
                 previous = schedule_receipts[expected_previous]
                 try:
+                    scheduled_at = parse_iso_instant(schedule.get("scheduled_at"))
                     latest_adverse = _latest_adverse_retention_instant(
                         (node_id, meta)
                         for node_id, meta in node_meta.items()
@@ -4920,14 +5158,26 @@ def validate_vault(
                             meta.get(field) == schedule.get(field)
                             for field in RETENTION_SCOPE_FIELDS
                         )
+                        and parse_iso_instant(meta.get("observed_at")) <= scheduled_at
+                        and meta.get("baseline_evidence_id") == previous.get("baseline_evidence_id")
+                        and meta.get("retention_task_id") == previous.get("retention_task_id")
                     )
-                    if latest_adverse is None or parse_iso_instant(
-                        node_meta[str(schedule.get("baseline_evidence_id"))].get(
-                            "observed_at"
-                        )
-                    ) <= latest_adverse:
+                    baseline = node_meta[str(schedule.get("baseline_evidence_id"))]
+                    repair_valid = latest_adverse is not None and parse_iso_instant(
+                        baseline.get("observed_at")
+                    ) > latest_adverse
+                    proactive_valid = _proactive_retention_review_eligible(
+                        previous, baseline, node_meta, route_issuance_events,
+                        as_of=schedule.get("scheduled_at"),
+                        allow_synthetic_demo=allow_synthetic_demo,
+                    )
+                    if proactive_valid and schedule.get("not_before") is not None:
                         errors.append(
-                            f"retention reschedule 缺少晚于失败的新 verification baseline: {schedule_id}"
+                            f"主动复习 retention reschedule 不得通过 not_before 任意延期: {schedule_id}"
+                        )
+                    if not repair_valid and not proactive_valid:
+                        errors.append(
+                            f"retention reschedule 缺少晚于失败的新 verification baseline 或合格主动复习: {schedule_id}"
                         )
                 except (TypeError, ValueError, KeyError):
                     errors.append(
@@ -5618,8 +5868,13 @@ def validate_vault(
                     and (remaining_eligible or all_targets_complete)
                 )
                 if not completed_transition:
+                    checkpoint_assessment = boundary_assessments_for_scope(
+                        index, node_meta, learner_id, goal_id
+                    ).get(str(checkpoint), {})
                     errors.append(
                         f"active intervention checkpoint 不是可学 outer_fringe: {node_id}/{checkpoint}"
+                        f"; next_action={checkpoint_assessment.get('next_action')}"
+                        f"; reasons={','.join(checkpoint_assessment.get('reason_codes', []))}"
                     )
             active_routes_by_scope.setdefault((learner_id, goal_id), []).append(node_id)
         elif checkpoint is not None and checkpoint not in path:
@@ -6093,11 +6348,14 @@ def validate_vault(
             ] = str(derived["mastery"])
     for (learner_id, goal_id), mastery_by_concept in derived_mastery_groups.items():
         derived_boundaries = derive_boundary_positions(
-            concept_relation_map, mastery_by_concept
+            concept_relation_map, mastery_by_concept, concept_metadata=node_meta
         )
         for concept_id, expected_boundary in derived_boundaries.items():
             state_id = state_keys[(learner_id, goal_id, concept_id)]
-            if node_meta[state_id].get("boundary_position") != expected_boundary:
+            if not _boundary_cache_matches(
+                node_meta[state_id].get("boundary_position"), expected_boundary,
+                mastery_by_concept[concept_id], node_meta.get(concept_id, {})
+            ):
                 errors.append(
                     "state boundary_position 未随 canonical evidence 重算: "
                     f"{state_id} stored={node_meta[state_id].get('boundary_position')} "
@@ -6198,17 +6456,19 @@ def validate_vault(
                             f"{evidence_id}"
                         )
         try:
-            expected_epoch_resolution = resolve_active_teaching(
+            expected_epoch_resolution = _resolve_active_teaching_snapshot(
                 vault,
                 write=False,
                 _skip_validation=True,
                 _as_of=active_resolution_meta.get("resolved_at"),
+                _snapshot=snapshot,
             )
-            expected_process_resolution = resolve_active_teaching(
+            expected_process_resolution = _resolve_active_teaching_snapshot(
                 vault,
                 write=False,
                 _skip_validation=True,
                 _as_of=active_resolution_meta.get("process_refreshed_at"),
+                _snapshot=snapshot,
             )
         except VaultError as exc:
             errors.append(f"active teaching resolution 无法重算: {exc}")
@@ -7403,7 +7663,6 @@ def derive_process_adaptation(
     }
 
 
-@vault_transaction_writer
 def resolve_active_teaching(
     vault: Path,
     *,
@@ -7421,6 +7680,29 @@ def resolve_active_teaching(
     onto an unrelated teaching asset.
     """
 
+    return _resolve_active_teaching_snapshot(
+        vault,
+        write=write,
+        _preserve_decision_epoch=_preserve_decision_epoch,
+        _skip_validation=_skip_validation,
+        _include_internal=_include_internal,
+        _as_of=_as_of,
+    )
+
+
+@vault_transaction_writer
+def _resolve_active_teaching_snapshot(
+    vault: Path,
+    *,
+    write: bool = True,
+    _preserve_decision_epoch: bool = False,
+    _skip_validation: bool = False,
+    _include_internal: bool = False,
+    _as_of: str | None = None,
+    _snapshot: _VaultReadSnapshot | None = None,
+) -> dict[str, Any]:
+    """Resolve from one scan while retaining every validation and writer lock."""
+
     if write and _as_of is not None:
         raise VaultError("生产教学决策禁止调用者回拨 as_of；历史时间只用于只读重算")
     decision_as_of = _as_of or utc_now_precise()
@@ -7428,13 +7710,14 @@ def resolve_active_teaching(
         decision_instant = parse_iso_instant(decision_as_of)
     except (TypeError, ValueError) as exc:
         raise VaultError("教学决策 as_of 必须是带时区 ISO 时间") from exc
+    snapshot = _snapshot if _snapshot is not None else _read_vault_snapshot(vault)
     if not _skip_validation:
-        validation_errors, _warnings, _summary = validate_vault(
-            vault, allow_unresolved_teaching=True
+        validation_errors, _warnings, _summary = _validate_vault_snapshot(
+            vault, allow_unresolved_teaching=True, _snapshot=snapshot
         )
         if validation_errors:
             raise VaultError("Vault 校验失败，不能解析教学决策:\n- " + "\n- ".join(validation_errors))
-    index, index_errors = build_index(vault)
+    index, index_errors = snapshot.index_result()
     if index_errors:
         raise VaultError("图谱存在错误，不能解析教学决策:\n- " + "\n- ".join(index_errors))
     manifest = json.loads((vault / MANIFEST_REL).read_text(encoding="utf-8"))
@@ -7445,7 +7728,7 @@ def resolve_active_teaching(
     all_meta: dict[str, dict[str, Any]] = {}
     all_body: dict[str, str] = {}
     for node_id, node in index["nodes"].items():
-        meta, body, _parse_errors = parse_note(vault / node["path"])
+        meta, body, _parse_errors = snapshot.read_note(node["path"])
         all_meta[node_id] = meta
         all_body[node_id] = body
 
@@ -7480,6 +7763,16 @@ def resolve_active_teaching(
     if state_entry is None:
         raise VaultError("active checkpoint 缺少同范围 state")
     _state_id, state = state_entry
+    boundary_assessment = boundary_assessments_for_scope(
+        index, all_meta, str(learner_id), str(goal_id)
+    )[checkpoint]
+    if boundary_assessment["next_action"] in {"defer_unmodeled", "defer_blocked"}:
+        raise VaultError(
+            "教学前置门控未满足；next_action=" + boundary_assessment["next_action"]
+            + "; reasons=" + ",".join(boundary_assessment["reason_codes"])
+            + "; graph_issue_ids=" + ",".join(boundary_assessment["graph_issue_ids"])
+            + "; diagnostic_concept_ids=" + ",".join(boundary_assessment["diagnostic_concept_ids"])
+        )
     contract = next(
         (
             item
@@ -7825,6 +8118,7 @@ def resolve_active_teaching(
     result = {
         "status": "resolved",
         "intervention_id": intervention_id,
+        "boundary_assessment": boundary_assessment,
         **resolution,
         "current_activity_id": resource_id,
         "current_probe_id": resource["diagnostic_probe"]["id"],
@@ -7891,7 +8185,209 @@ def resolve_active_teaching(
         result["node_count"] = rebuilt_index["node_count"]
     if _include_internal:
         result["_decision"] = decision
+        result["_teaching_brief"] = _build_teaching_brief_from_validated_context(
+            index, all_meta, decision, resolution, contract,
+            as_of=decision_as_of, allow_synthetic_demo=allow_synthetic_demo,
+        )
     return result
+
+
+def _build_teaching_brief_from_validated_context(
+    index: dict[str, Any],
+    all_meta: dict[str, dict[str, Any]],
+    decision: dict[str, Any],
+    resolution: dict[str, Any],
+    contract: dict[str, Any],
+    *,
+    as_of: str,
+    allow_synthetic_demo: bool,
+) -> dict[str, Any]:
+    """Project only the current step's generation inputs, never raw test content."""
+    scope = decision["scope"]
+    concept_id = scope["concept_id"]
+    goal = all_meta[scope["goal_id"]]
+    active_intervention = next(
+        meta for meta in all_meta.values()
+        if meta.get("type") == "intervention" and meta.get("status") == "active"
+        and meta.get("learner_id") == scope["learner_id"]
+        and meta.get("goal_id") == scope["goal_id"]
+        and meta.get("route_id") == decision["route_id"]
+        and meta.get("route_version") == decision["route_version"]
+    )
+    # Process observations may refresh feedback/cost without changing the
+    # teaching method epoch. These fields were canonically checked by validation.
+    resolution = {**resolution, **{
+        field: active_intervention[field] for field in PROCESS_REFRESH_FIELDS
+        if field in active_intervention
+    }}
+    relations = index["nodes"][concept_id].get("relations", [])
+    nearby_ids = {
+        relation["target"] for relation in relations
+        if relation.get("type") in {"requires", "related_to", "contrasts_with"}
+    }
+    nearby_ids.update(all_meta[concept_id].get("required_contrast_ids", []))
+    concept_inventory = [
+        {"concept_id": node_id, "title": all_meta[node_id].get("title", node_id),
+         "aliases": all_meta[node_id].get("aliases", [])}
+        for node_id in sorted(nearby_ids | {concept_id})
+    ]
+    current_evidence_at = utc_now_precise()
+    boundary = boundary_assessments_for_scope(
+        index, all_meta, scope["learner_id"], scope["goal_id"]
+    )[concept_id]
+    scoped_sources: dict[str, Any] = {}
+    anchors: list[dict[str, Any]] = []
+    for state_id, state in sorted(all_meta.items()):
+        if (
+            state.get("type") != "state"
+            or state.get("learner_id") != scope["learner_id"]
+            or state.get("goal_id") != scope["goal_id"]
+            or state.get("concept_id") not in nearby_ids | {concept_id}
+        ):
+            continue
+        source_records = {
+            relation["target"]: all_meta[relation["target"]]
+            for relation in index["nodes"][state_id].get("relations", [])
+            if relation.get("type") == "supported_by"
+            and relation.get("target") in all_meta
+        }
+        scoped_sources[state_id] = {"state": state, "evidence": source_records}
+        # The method epoch is historical, but a currently failed/unknown anchor
+        # cannot regain trust merely by evaluating its older passing record.
+        if state.get("concept_id") not in nearby_ids or state.get("mastery") != "mastered":
+            continue
+        own_contract = next((item for item in goal.get("mastery_contracts", []) if
+            item.get("id") == state.get("contract_id")
+            and item.get("version") == state.get("contract_version")
+            and item.get("concept_id") == state.get("concept_id")), None)
+        if own_contract is None:
+            continue
+        records = [
+            (relation["target"], all_meta[relation["target"]])
+            for relation in index["nodes"][state_id].get("relations", [])
+            if relation.get("type") == "supported_by"
+            and relation.get("target") in all_meta
+        ]
+        evaluation = evaluate_mastery_contract(
+            own_contract, records,
+            state_context=state_context_with_current_schedule(state, all_meta, strict=True),
+            as_of=current_evidence_at, allow_synthetic_demo=allow_synthetic_demo,
+        )
+        if evaluation.get("status") != "met":
+            continue
+        evidence_ids = list(evaluation.get("qualified_evidence_ids", []))
+        if not evidence_ids:
+            continue
+        anchors.append({
+            "concept_id": state["concept_id"],
+            "title": all_meta[state["concept_id"]].get("title", state["concept_id"]),
+            "evidence_ids": evidence_ids,
+            "contract_id": own_contract["id"],
+            "contract_version": own_contract["version"],
+        })
+    measured = bool(resolution["resolved_process_refs"])
+    cost_inputs = {
+        dimension: {
+            "value": value, "unit": "minutes",
+            "basis": "observed" if measured and dimension == "practice_feedback" else "estimated",
+            "source_refs": list(resolution["resolved_process_refs"])
+            if measured and dimension == "practice_feedback" else [decision["route_id"]],
+        }
+        for dimension, value in resolution["resolved_cost_vector"].items()
+    }
+    diagnostic_probe = None
+    if boundary["next_action"] == "diagnose_now":
+        resource = all_meta[resolution["resolved_resource_id"]]
+        probe = resource["diagnostic_probe"]
+        diagnostic_probe = {key: probe[key] for key in ("id", "prompt", "success_criteria")}
+    brief = {
+        "schema": "uc-teaching-brief/0.1",
+        "visibility": "agent_only",
+        "scope": dict(scope),
+        "route_binding_id": resolution["resolved_route_binding_id"],
+        "decision_fingerprint": resolution["resolved_decision_fingerprint"],
+        "decision_as_of": as_of,
+        "source_revision": sha256_fingerprint(scoped_sources),
+        "goal": goal.get("source_question", goal.get("title")),
+        "current_concept": all_meta[concept_id].get("title", concept_id),
+        "required_capabilities": [item for item in contract["requirements"]["required_capabilities"]
+                                  if item != "delayed_retention"],
+        "verified_anchors": anchors,
+        "concept_inventory": concept_inventory,
+        "required_comparisons": [
+            {"concept_id": other, "title": all_meta[other].get("title", other),
+             "can_use_as_known_anchor": other in {item["concept_id"] for item in anchors}}
+            for other in all_meta[concept_id].get("required_contrast_ids", [])
+        ],
+        "terms_to_ground": list(decision["introduced_terms"]),
+        "activity": resolution["resolved_activity"],
+        "carrier": resolution["resolved_carrier"],
+        "resource_id": resolution["resolved_resource_id"],
+        "method_evidence_ids": list(resolution["resolved_profile_refs"]),
+        "feedback_rule": resolution["resolved_process_feedback_rule"],
+        "process_status": resolution["resolved_process_status"],
+        "routing_action": boundary["next_action"],
+        "boundary_reason_codes": boundary["reason_codes"],
+        "diagnostic_probe": diagnostic_probe,
+        "process_next_action": resolution["resolved_process_next_action"],
+        "cost_inputs": cost_inputs,
+        "verification_content_guard": decision["verification_content_guard"],
+        "authoring_rules": [
+            "只选择当前合同的一小项可观察能力；不要一次讲完整张图。",
+            "只有 verified_anchors 可声明为已知推理前提；兴趣只能选情境。",
+            "新承重词先说明是什么、属于谁、作用和方向；补齐清单再签发。",
+            "concept_inventory 是正文漏项检查用的本步词表，不是新增课程；未使用的邻近词不用逐个教。",
+            "检查最终正文和定义中的承重概念，不能只检查作者声明；未登记概念仍须 Agent 语义审阅。",
+            "新模型/算法先讲解决什么问题、表示什么和一个最小例子；用户说明含义后，才在需要时进入公式。",
+            "过程成功只用于少重复讲解、进入独立检验，不直接授予掌握。",
+            "routing_action 优先于 process_next_action；诊断分支先发绑定的 diagnostic_probe，不把修复建议当成诊断。",
+            "本简报绑定已存储的教学决策并采用最新过程反馈；要改变教学方式，先显式 resolve-teaching，再重新准备并绑定简报。",
+        ],
+    }
+    # A source title/question or diagnostic probe must not accidentally copy a
+    # reserved test either. Hash-only guard metadata is deliberately excluded.
+    try:
+        load_text_learning_policy()._assert_no_reserved_verification_overlap(
+            {
+                "goal": brief["goal"], "current_concept": brief["current_concept"],
+                "anchor_titles": [item["title"] for item in anchors],
+                "comparison_titles": [item["title"] for item in brief["required_comparisons"]],
+                "terms_to_ground": brief["terms_to_ground"],
+                "concept_inventory": concept_inventory,
+                "diagnostic_probe": ({key: diagnostic_probe[key] for key in ("prompt", "success_criteria")}
+                                     if diagnostic_probe is not None else None),
+            },
+            brief["verification_content_guard"],
+        )
+    except Exception as exc:
+        if exc.__class__.__name__ == "TextPolicyError":
+            raise VaultError(f"教学简报包含保留验证内容；先修复来源或更换验证任务: {exc}") from exc
+        raise
+    brief["brief_fingerprint"] = sha256_fingerprint(brief)
+    return brief
+
+
+@vault_transaction_writer
+def prepare_teaching_brief(vault: Path) -> dict[str, Any]:
+    """Read-only compact authoring context; issue-teaching rechecks before writing."""
+    snapshot = _read_vault_snapshot(vault)
+    errors, _warnings, _summary = _validate_vault_snapshot(vault, _snapshot=snapshot)
+    if errors:
+        raise VaultError("Vault 校验失败，不能准备教学简报:\n- " + "\n- ".join(errors))
+    index, _index_errors = snapshot.index_result()
+    manifest = json.loads((vault / MANIFEST_REL).read_text(encoding="utf-8"))
+    all_meta = {node_id: snapshot.read_note(node["path"])[0] for node_id, node in index["nodes"].items()}
+    learner_id = all_meta[str(manifest["active_learner_id"])]["learner_id"]
+    active = [meta for meta in all_meta.values() if meta.get("type") == "intervention"
+              and meta.get("status") == "active" and meta.get("learner_id") == learner_id
+              and meta.get("goal_id") == manifest["active_goal_id"]]
+    if len(active) != 1:
+        raise VaultError("必须有且只有一条当前 learner+goal 的 active intervention")
+    result = _resolve_active_teaching_snapshot(
+        vault, write=False, _skip_validation=True, _include_internal=True,
+        _as_of=active[0]["resolved_at"], _snapshot=snapshot,
+    )
+    return result["_teaching_brief"]
 
 
 @vault_transaction_writer
@@ -7940,11 +8436,40 @@ def issue_teaching_delivery(vault: Path, *, content_path: Path) -> dict[str, Any
         _as_of=intervention.get("resolved_at"),
     )
     decision = resolution.pop("_decision")
+    from teaching_contract import validate_teaching_basis
+    from teaching_review import draft_terms, review_teaching_content
+
+    brief = resolution.pop("_teaching_brief")
+    if brief["routing_action"] != "teach_now":
+        probe = brief.get("diagnostic_probe") or {}
+        raise VaultError(
+            "当前路线禁止签发完整教学；routing_action=" + brief["routing_action"]
+            + "; diagnostic_probe_id=" + str(probe.get("id"))
+            + "。先按路线完成已绑定诊断或选择未掌握目标，再重新准备教学简报。"
+        )
+    try:
+        validate_teaching_basis(brief, content)
+    except ValueError as exc:
+        raise VaultError(f"教学依据未通过边界与目标门: {exc}") from exc
+    decision = {**decision, "process_adaptation": {
+        **decision.get("process_adaptation", {}),
+        "status": brief["process_status"],
+        "feedback_rule": brief["feedback_rule"],
+        "next_action": brief["process_next_action"],
+    }}
     policy = load_text_learning_policy()
     try:
-        delivery_plan = policy.project_delivery_plan(decision, content)
+        # Author-discovered terms are draft dependencies, not new route/method
+        # decisions. Keep all required terms and validate the actual projection.
+        projection_decision = {**decision, "introduced_terms": draft_terms(brief["terms_to_ground"], content)}
+        delivery_plan = policy.project_delivery_plan(projection_decision, content)
+        review_teaching_content(
+            concept_inventory=brief["concept_inventory"],
+            verified_concept_ids=content["teaching_basis"]["anchor_ids"],
+            required_terms=brief["terms_to_ground"], content=delivery_plan,
+        )
     except Exception as exc:
-        if exc.__class__.__name__ == "TextPolicyError":
+        if isinstance(exc, ValueError):
             raise VaultError(f"教学内容未通过用户投影协议: {exc}") from exc
         raise
     issued_instant = datetime.now(timezone.utc)
@@ -8276,10 +8801,10 @@ def _trusted_seed_route_prefix_length(manifest: dict[str, Any]) -> int:
     ):
         return 0
     try:
-        seed = json.loads(SEED_PATH.read_text(encoding="utf-8"))
+        seed = _trusted_seed_for_manifest(manifest)
         bindings = seed.get("route_bindings")
         return len(bindings) if isinstance(bindings, list) else 0
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, VaultError):
         return 0
 
 
@@ -8387,6 +8912,60 @@ def _latest_adverse_retention_instant(
         except (TypeError, ValueError):
             continue
     return max(instants, default=None)
+
+
+def _proactive_retention_review_eligible(
+    previous: dict[str, Any],
+    baseline: dict[str, Any],
+    all_meta: dict[str, dict[str, Any]],
+    route_events: Iterable[dict[str, Any]],
+    *,
+    as_of: str,
+    allow_synthetic_demo: bool,
+) -> bool:
+    """Accept a fresh independent review before an unopened schedule is due.
+
+    Recompute from immutable receipts and issued behavior, never a caller's
+    review label. Historical validation uses its schedule time, not today's
+    wall clock, so a later retention failure cannot invalidate older receipts.
+    """
+
+    if (
+        previous.get("type") != "retention_schedule"
+        or baseline.get("id") == previous.get("baseline_evidence_id")
+        or not _qualified_verification_baseline(
+            baseline, previous, allow_synthetic_demo=allow_synthetic_demo
+        )
+    ):
+        return False
+    try:
+        previous_at = parse_iso_instant(previous.get("scheduled_at"))
+        observed_at = parse_iso_instant(baseline.get("observed_at"))
+        decision_at = parse_iso_instant(as_of)
+        due_at = parse_iso_instant(previous.get("scheduled_for"))
+        if not previous_at < observed_at <= decision_at < due_at:
+            return False
+        if any(
+            meta.get("type") == "verification_open"
+            and meta.get("retention_schedule_id") == previous.get("id")
+            and parse_iso_instant(meta.get("opened_at")) <= decision_at
+            for meta in all_meta.values()
+        ):
+            return False
+        baseline_routes = [
+            event for event in route_events
+            if event.get("route_purpose") == "learning"
+            and event.get("route_id") == baseline.get("route_id_at_observation")
+            and event.get("route_version") == baseline.get("route_version_at_observation")
+            and event.get("verification_task_id") == baseline.get("verification_task_id")
+            and all(event.get(field) == baseline.get(field) for field in RETENTION_SCOPE_FIELDS)
+        ]
+        return bool(
+            len(baseline_routes) == 1
+            and previous_at < parse_iso_instant(baseline_routes[0].get("issued_at")) <= observed_at
+        )
+    except (TypeError, ValueError):
+        return False
 
 
 def _route_target_performance(contract: dict[str, Any]) -> str:
@@ -8632,6 +9211,9 @@ def issue_route(vault: Path, *, record_path: Path) -> dict[str, Any]:
         if node.get("type") == "concept"
     }
     target_subgraph = target_subgraph_for_goal(index, goal_id, requirements)
+    boundary_assessments = boundary_assessments_for_scope(
+        index, all_meta, str(learner_id), str(goal_id)
+    )
     next_route_version = 1 + max(
         (
             int(event["route_version"])
@@ -8786,6 +9368,7 @@ def issue_route(vault: Path, *, record_path: Path) -> dict[str, Any]:
             if candidate_state_entry is None:
                 continue
             candidate_state = candidate_state_entry[1]
+            candidate_boundary = boundary_assessments[candidate_concept]
             candidate_contract = next(
                 (
                     item
@@ -8831,11 +9414,7 @@ def issue_route(vault: Path, *, record_path: Path) -> dict[str, Any]:
             compatible_resources.sort(
                 key=lambda item: (item["duration_minutes"], item["id"])
             )
-            routing_action = (
-                "diagnose_now"
-                if candidate_state.get("mastery") == "unknown"
-                else "teach_now"
-            )
+            routing_action = candidate_boundary["next_action"]
             focus = latest_focus.get(candidate_concept, {})
             resource_options: list[dict[str, Any] | None] = (
                 list(compatible_resources) if compatible_resources else [None]
@@ -8900,16 +9479,13 @@ def issue_route(vault: Path, *, record_path: Path) -> dict[str, Any]:
                         "in_target_subgraph": candidate_concept in target_subgraph,
                         "mastery_compatible": candidate_state.get("mastery")
                         != "mastered",
-                        "prerequisites_satisfied": all(
-                            states_by_concept.get(required, ({}, {}))[1].get("mastery")
-                            == "mastered"
-                            for required in requirements.get(candidate_concept, set())
-                        ),
+                        "prerequisites_satisfied": not candidate_boundary["blocking_prerequisite_ids"],
                         "hard_constraints_satisfied": isinstance(
                             selected_resource, dict
                         )
-                        and candidate_state.get("boundary_position")
+                        and candidate_boundary["boundary_position"]
                         == "outer_fringe",
+                        "boundary_assessment": candidate_boundary,
                         "route_level": route_level(candidate_concept),
                         "route_order": route_order * 1000 + resource_order,
                         "routing_action": routing_action,
@@ -8959,6 +9535,10 @@ def issue_route(vault: Path, *, record_path: Path) -> dict[str, Any]:
             raise VaultError(
                 "canonical route candidates 没有可签发项: "
                 + str(selection.get("selection_basis"))
+                + "; boundary=" + json.dumps(
+                    {item["concept_id"]: item["boundary_assessment"] for item in candidates},
+                    ensure_ascii=False, sort_keys=True,
+                )
             )
         if selected_concept != concept_id:
             raise VaultError(
@@ -9065,13 +9645,25 @@ def issue_route(vault: Path, *, record_path: Path) -> dict[str, Any]:
             and latest_adverse is not None
             and parse_iso_instant(baseline.get("observed_at")) > latest_adverse
         )
+        proactive_retention_gate = bool(
+            live_evaluation.get("immediate_contract_status") == "met"
+            and live_evaluation.get("retention_status") == "pending"
+            and baseline_evidence_id in live_evaluation.get("immediate_qualified_evidence_ids", [])
+            and _proactive_retention_review_eligible(
+                all_meta.get(str(state.get("current_retention_schedule_id")), {}),
+                baseline, all_meta, route_events,
+                as_of=issued_at,
+                allow_synthetic_demo=allow_synthetic_demo,
+            )
+        )
         if (
             not isinstance(delayed, dict)
             or delayed.get("required") is not True
-            or not (normal_retention_gate or repair_retention_gate)
+            or not (normal_retention_gate or repair_retention_gate or proactive_retention_gate)
         ):
             raise VaultError(
-                "state 尚未达到首次 retention gate，且没有晚于失败的新合格 verification baseline"
+                "state 尚未达到首次 retention gate，且没有晚于失败的新合格 verification baseline，"
+                "也没有到期前新签发并独立通过的主动复习 baseline"
             )
         task_id = normalized_resource["verification_task"]["id"]
         task_fingerprint = sha256_fingerprint(
@@ -9747,14 +10339,27 @@ def schedule_retention(vault: Path, *, record_path: Path) -> dict[str, Any]:
         and latest_adverse is not None
         and parse_iso_instant(baseline.get("observed_at")) > latest_adverse
     )
-    if not normal_gate and not repair_gate:
-        raise VaultError(
-            "state 当前既不在首次 schedule_retention gate，也没有晚于失败的新合格 verification baseline"
-        )
-
     _registry, events, route_errors = load_route_binding_registry(vault, manifest)
     if route_errors:
         raise VaultError("route issuance 校验失败: " + "; ".join(route_errors))
+    previous_schedule_id = state.get("current_retention_schedule_id")
+    previous = all_meta.get(str(previous_schedule_id), {})
+    proactive_gate = bool(
+        live_evaluation.get("immediate_contract_status") == "met"
+        and live_evaluation.get("retention_status") == "pending"
+        and _proactive_retention_review_eligible(
+            previous, baseline, all_meta, events,
+            as_of=commit_at,
+            allow_synthetic_demo=allow_synthetic_demo,
+        )
+    )
+    if not normal_gate and not repair_gate and not proactive_gate:
+        raise VaultError(
+            "state 当前既不在首次 schedule_retention gate，也没有晚于失败的新合格 verification baseline，"
+            "且不满足到期前主动复习 gate"
+        )
+    if proactive_gate and not_before is not None:
+        raise VaultError("主动复习重排 not_before 必须为 null；只能从新 baseline 按合同最小延迟派生")
     matches = [event for event in events if event.get("binding_id") == binding_id]
     if len(matches) != 1:
         raise VaultError("route_binding_id 必须唯一解析到已签发事件")
@@ -9808,9 +10413,7 @@ def schedule_retention(vault: Path, *, record_path: Path) -> dict[str, Any]:
     scheduled_for = scheduled_instant.isoformat(timespec="microseconds").replace(
         "+00:00", "Z"
     )
-    previous_schedule_id = state.get("current_retention_schedule_id")
-    if repair_gate:
-        previous = all_meta.get(str(previous_schedule_id), {})
+    if repair_gate or proactive_gate:
         if previous.get("type") != "retention_schedule":
             raise VaultError("retention repair 缺少可 supersede 的 current schedule receipt")
         if (
@@ -9960,6 +10563,11 @@ def schedule_retention(vault: Path, *, record_path: Path) -> dict[str, Any]:
         "state_id": state_id,
         "retention_schedule_id": schedule_id,
         "schedule_fingerprint": schedule_meta["receipt_fingerprint"],
+        "schedule_reason": (
+            "proactive_review" if proactive_gate
+            else "failed_retention_repair" if repair_gate else "initial"
+        ),
+        "supersedes_schedule_id": previous_schedule_id,
         "baseline_evidence_id": baseline_id,
         "retention_task_id": task_id,
         "retention_route_binding_id": binding_id,
@@ -10994,6 +11602,7 @@ def append_evidence(vault: Path, *, record_path: Path) -> dict[str, Any]:
             str(item["concept_id"]): str(item["mastery"])
             for item in scoped_states.values()
         },
+        concept_metadata=all_meta,
     )
     updated_states: dict[str, dict[str, Any]] = {}
     boundary_changed_ids: list[str] = []
@@ -11781,6 +12390,9 @@ def load_cone_data(vault: Path) -> dict[str, Any]:
         if node["type"] == "concept"
     }
     target_subgraph = target_subgraph_for_goal(index, active_goal_id, requirements)
+    boundary_assessments = boundary_assessments_for_scope(
+        index, all_meta, str(learner_id), str(active_goal_id)
+    )
 
     interventions: list[dict[str, Any]] = []
     for node_id, node in index["nodes"].items():
@@ -11872,17 +12484,14 @@ def load_cone_data(vault: Path) -> dict[str, Any]:
         node = index["nodes"][node_id]
         meta = all_meta[node_id]
         state = states_by_concept.get(node_id, {})
+        assessment = boundary_assessments.get(node_id, {})
         focus_meta = focus_by_concept[node_id]
         in_target_subgraph = node_id in target_subgraph
         eligible = is_eligible_teaching_candidate(node_id, target_subgraph, states_by_concept)
         mastery = state.get("mastery", "unknown")
-        boundary = state.get("boundary_position", "unknown")
+        boundary = assessment.get("boundary_position", "unknown")
         ranking_status = focus_meta.get("ranking_status", "incomplete")
-        blocking_prerequisite_ids = sorted(
-            prerequisite
-            for prerequisite in requirements.get(node_id, set())
-            if states_by_concept.get(prerequisite, {}).get("mastery") != "mastered"
-        )
+        blocking_prerequisite_ids = list(assessment.get("blocking_prerequisite_ids", []))
         if node_id == candidate_id:
             selection_status = "selected"
             routing_action = str(selected_routing_action)
@@ -11906,6 +12515,10 @@ def load_cone_data(vault: Path) -> dict[str, Any]:
             selection_status = "ineligible"
             routing_action = "exclude_mastered"
             reason_codes = ["mastery_contract_met"]
+        elif assessment.get("next_action") == "defer_unmodeled":
+            selection_status = "not_evaluated"
+            routing_action = "defer_unmodeled"
+            reason_codes = list(assessment["reason_codes"])
         elif boundary == "blocked":
             selection_status = "ineligible"
             routing_action = "defer_blocked"
@@ -11918,6 +12531,7 @@ def load_cone_data(vault: Path) -> dict[str, Any]:
             selection_status = "not_evaluated"
             routing_action = "defer_unmodeled"
             reason_codes = ["focus_inputs_incomplete"] if ranking_status != "complete" else ["prerequisite_gap"]
+        reason_codes = list(dict.fromkeys([*reason_codes, *assessment.get("reason_codes", [])]))
         nodes.append(
             {
                 "id": node_id,
@@ -11944,6 +12558,7 @@ def load_cone_data(vault: Path) -> dict[str, Any]:
                 "input_confidence": focus_meta.get("input_confidence"),
                 "mastery": mastery,
                 "boundary": boundary,
+                "boundary_assessment": assessment,
                 "confidence": state.get("mastery_confidence", "low"),
                 "candidate": node_id == candidate_id,
                 "in_target_subgraph": in_target_subgraph,
@@ -12213,14 +12828,18 @@ def positive_int(value: str) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
+    from learning_entry import DATA_MODES
+
     parser = argparse.ArgumentParser(description="理解成本 Demo Vault 工具")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    subparsers.add_parser("learning-entry", help="仅确认本次学习的数据模式；不读写数据库，也不诊断或教学")
 
     init_parser = subparsers.add_parser("init", help="在空目录初始化匿名 Vault")
     init_parser.add_argument("--vault", required=True, type=Path)
     init_parser.add_argument("--learner-id", required=True, help="ASCII 匿名 ID，例如 learner-demo-01")
 
-    seed_parser = subparsers.add_parser("seed-demo", help="在空目录生成合成 Demo")
+    seed_parser = subparsers.add_parser("seed-demo", help="维护专用：在空目录生成合成 Demo，不用于创建真人数据")
     seed_parser.add_argument("--vault", required=True, type=Path)
 
     validate_parser = subparsers.add_parser("validate", help="只读校验 Vault")
@@ -12246,6 +12865,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     resolve_teaching_parser.add_argument("--vault", required=True, type=Path)
     resolve_teaching_parser.add_argument("--dry-run", action="store_true")
+
+    brief_parser = subparsers.add_parser(
+        "prepare-teaching", help="只读输出当前步骤的 Agent 教学简报；不含原始验证题或答案"
+    )
+    brief_parser.add_argument("--vault", required=True, type=Path)
 
     issue_teaching_parser = subparsers.add_parser(
         "issue-teaching",
@@ -12302,12 +12926,63 @@ def build_parser() -> argparse.ArgumentParser:
     cone_parser.add_argument("--vault", required=True, type=Path)
     cone_parser.add_argument("--output", required=True, type=Path)
     cone_parser.add_argument("--force", action="store_true", help="确认覆盖已有导出文件")
+    for command_parser in subparsers.choices.values():
+        command_parser.add_argument("--data-mode", choices=DATA_MODES, help="用户本次明确选择的数据模式，无默认值")
+        command_parser.add_argument("--confirmation-ref", help="本次用户明确确认的消息引用，不是真实性证明")
+        command_parser.add_argument("--data-root", help="用户指定并确认的精确数据库绝对路径")
+        command_parser.add_argument("--write-confirmation-ref", help="使用已有库时的额外写入确认消息引用")
     return parser
+
+
+def _guard_learning_cli(args: argparse.Namespace) -> dict[str, Any] | None:
+    """Gate user-data CLI entrypoints, leaving maintenance Python APIs intact."""
+    from learning_entry import EntryGateError, build_entry_plan, guard_operation
+
+    selection = {
+        name: getattr(args, name, None)
+        for name in ("data_mode", "confirmation_ref", "data_root", "write_confirmation_ref")
+    }
+    if args.command == "seed-demo":
+        if any(value is not None for value in selection.values()):
+            return {"status": "blocked", "reason": "synthetic_maintenance_only",
+                    "next_action": "use_learning_entry",
+                    "message": "seed-demo 只用于合成维护测试，不能作为任一真人学习模式的建库工具。"}
+        return None
+    plan = build_entry_plan(**selection)
+    if args.command == "learning-entry" or plan["status"] != "ready":
+        return plan
+    if not plan["can_read_personal_data"]:
+        return {"status": "blocked", "reason": "personal_data_disabled",
+                "next_action": "local_boundary_check",
+                "message": "当前模式不调用个人数据库命令；只根据本轮问题和回答临时确认前提。"}
+    if args.command == "recover-route":
+        return {"status": "blocked", "reason": "legacy_discovery_outside_scope",
+                "next_action": "ask_exact_vault",
+                "message": "旧入口扫描会访问父目录，学习 CLI 已禁用。请确认精确 Vault 路径，再用 recover-learning-route；未扫描或创建数据。"}
+    readonly = {"validate", "recover-learning-route", "prepare-teaching", "inspect-cone", "open-verification"}
+    write = args.command not in readonly
+    if args.command == "resolve-teaching":
+        write = not args.dry_run
+    extra_paths = tuple(
+        getattr(args, name) for name in ("record", "content", "output")
+        if getattr(args, name, None) is not None
+    )
+    try:
+        guard_operation(plan, args.vault, write=write,
+                        initialize=args.command == "init", extra_paths=extra_paths)
+    except EntryGateError as exc:
+        return {"status": "blocked", "reason": exc.code,
+                "next_action": "confirm_permitted_operation", "message": str(exc)}
+    return None
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
+        gate_result = _guard_learning_cli(args)
+        if gate_result is not None:
+            print(json_dump(gate_result), end="")
+            return 0 if args.command == "learning-entry" and gate_result["status"] != "blocked" else 2
         if args.command == "init":
             if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,31}", args.learner_id):
                 raise VaultError("learner-id 只能使用 2–32 位小写 ASCII 字母、数字和连字符")
@@ -12324,7 +12999,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if not errors else 2
         if args.command == "rebuild-index":
             index, errors = rebuild_index(args.vault)
-            print(json_dump({"status": "rebuilt" if not errors else "rebuilt_with_errors", "node_count": index["node_count"], "errors": errors}), end="")
+            print(json_dump({"status": "rebuilt" if not errors else "invalid", "node_count": index["node_count"], "errors": errors}), end="")
             return 0 if not errors else 2
         if args.command == "recover-route":
             return recover_route(args.start, args.max_depth, args.repair)
@@ -12335,6 +13010,9 @@ def main(argv: list[str] | None = None) -> int:
                 json_dump(resolve_active_teaching(args.vault, write=not args.dry_run)),
                 end="",
             )
+            return 0
+        if args.command == "prepare-teaching":
+            print(json_dump(prepare_teaching_brief(args.vault)), end="")
             return 0
         if args.command == "issue-teaching":
             print(

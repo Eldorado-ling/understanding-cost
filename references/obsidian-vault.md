@@ -1,5 +1,7 @@
 # Obsidian Vault 约定与路由恢复
 
+先通过[学习入口三选一](learning-entry.md)。本文件仅在创建/使用既有库模式下读取个人库；无个人数据模式不定位 Vault。既有库默认只读，任一 writer 需要额外写授权。通用用户数据库不必符合本文件格式；不兼容时只读所选资料，禁止自动改造。
+
 ## 最小目录
 
 ```text
@@ -66,16 +68,16 @@ tags: [uc/concept, domain/python]
 
 ## 固定恢复顺序
 
-1. 若用户给出显式 Vault 路径，校验该路径；
-2. 从当前路径逐级向父目录查找 `.understanding-cost-route.json`；
-3. 若 marker 不存在，查找 `00-system/manifest.json`；
-4. 只在用户指定或当前工作范围内做有界只读搜索；
-5. 校验 schema、Vault ID、学习者和链接；
-6. 唯一匹配时可建议修复；只有显式 `--repair` 才写 marker；
-7. 多个匹配时列出候选并询问用户；不得自行选最新或合并；
-8. 无匹配时询问“从未创建”还是“需要继续找/重建”；
-9. 只有用户明确确认后初始化或重建；
-10. 重建内容写 `reconstruction_status: provisional` 和 `derived_from`，验证后再更新 Router。
+1. 确认当前数据模式和用户指定的精确 Vault 位置；没有位置先问，不把工作目录当成授权；
+2. 只在该位置核对 `.understanding-cost-route.json` 和 `00-system/manifest.json`，不逐级向父目录寻找；
+3. 在授权范围内校验 schema、Vault ID、学习者和链接；
+4. 唯一匹配时通过 `recover-learning-route` 续接；入口 marker 缺失不等于画像丢失；
+5. 多个匹配时列出候选并询问用户，不自行选最新或合并；
+6. 无匹配时询问精确新位置、相关导出或是否改为创建模式，不能静默初始化；
+7. 需要修复 marker、索引或路线时，既有库先取得额外写授权；读取同意不是修复同意；
+8. 初始化/重建必须另获精确目标授权，不覆盖旧库；重建记录为 provisional / unknown，保留来源。
+
+旧 `recover-route` 底层维护函数仍能向父目录寻找，但 v0.1.3 学习 CLI 禁用这个扫描入口，返回请求精确位置。不得通过直接调用维护函数绕过学习授权范围。
 
 Obsidian 图的节点屏幕坐标不是数据，不能用于恢复路由或推断掌握。
 

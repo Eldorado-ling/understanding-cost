@@ -15,8 +15,8 @@ verification_task: {"id": "verify-python-call-stack-unseen-v1", "prompt": "ç»™å®
 duration_minutes: 6
 difficulty: "introductory"
 language: "zh-CN"
-created_at: "2026-08-28T03:24:07Z"
-updated_at: "2026-08-28T03:24:07Z"
+created_at: "2026-09-03T11:16:49Z"
+updated_at: "2026-09-03T11:16:49Z"
 privacy: "private"
 tags: ["uc/resource"]
 cost_vector: {"diagnosis": 0.5, "prerequisites": 0.5, "core_learning": 5.0, "practice_feedback": 1.5, "verification": 2.5, "maintenance_relearning": 1.5}

@@ -10,21 +10,21 @@ contract_id: "mc-python-iteration-baseline"
 contract_version: 1
 mastery: "mastered"
 mastery_confidence: "high"
-boundary_position: "inner_fringe"
+boundary_position: "interior"
 immediate_contract_status: "met"
 contract_status: "met"
 retention_status: "passed_7d"
 next_action: "none"
 valid_context: "Python 基础循环与变式任务"
 as_of: "2026-08-26T06:10:00Z"
-evaluated_at: "2026-08-28T03:24:07Z"
+evaluated_at: "2026-09-03T11:16:49Z"
 last_independent_evidence_at: "2026-08-26T06:10:00Z"
 boundary_derived_at: "2026-08-26T06:10:00Z"
 last_assessed_at: "2026-08-26T06:10:00Z"
 misconception_flags: []
 diagnostic_snapshot: null
-created_at: "2026-08-28T03:24:07Z"
-updated_at: "2026-08-28T03:24:07Z"
+created_at: "2026-09-03T11:16:49Z"
+updated_at: "2026-09-03T11:16:49Z"
 privacy: "private"
 tags: ["uc/state", "uc/state/mastered"]
 ---

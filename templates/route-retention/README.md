@@ -2,6 +2,8 @@
 
 这些模板只供 Agent 构造生产命令输入，不得直接展示给学习者。复制模板到工作文件并替换全部 `$...` 占位值；不能增加由调用者自证的 scope、context、task、fingerprint、hash、状态或时间结论。
 
+v0.1.3 先确认[数据模式与写入权限](../../references/learning-entry.md)，只有获准持久化的分支使用本组模板。无个人数据和既有库只读分支不签发/排期，也不为使用模板另建数据库。CLI 的确认参数及根目录内工作文件约束见[维护者指南](../../references/maintainer-guide.md)。
+
 - `issue-route-learning.json`：签发下一条当前学习路线。命令会从实时 Vault 重建候选并要求所填 concept/resource 正好等于 canonical selector 的结果。`user_cost_priority` 没有用户明确偏好时保持 `null`；有偏好时只填 canonical 成本维度组成的无重复数组。
 - `issue-route-retention.json`：为已满足即时合同的 concept 签发一个不同于 baseline 的未使用保持任务；baseline 也必须列入 `source_ref_ids`，并被发行事件显式冻结。保持签发不执行成本候选比较，因此 `user_cost_priority` 固定为 `null`。
 - `schedule-retention.json`：把合格 baseline 与已签发 retention binding 形成不可变 schedule receipt，state 只保存当前 receipt ID。`scheduled_for` 由命令计算为 `max(baseline.observed_at + min_delay_days, not_before)`；`not_before` 可为 `null`。

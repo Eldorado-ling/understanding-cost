@@ -1,5 +1,13 @@
 # 数据模型与操作定义
 
+## v0.1.3 会话入口与持久化范围
+
+创建、使用既有库、不使用个人数据三个模式先由用户明确选择，见[学习入口](learning-entry.md)。`data_mode / confirmation_ref / data_root / write_confirmation_ref` 是本会话的执行参数，不是 mastery 证据，也不默认写入个人数据库。选择遗失、新会话或权限扩大时重新确认，不能从旧 manifest 自行恢复用户同意。
+
+以下四层和节点 schema 仅在获准持久化时创建/更新。只读既有库可读取授权证据，但新回答和派生结论停留在本会话；无个人数据模式不读取这些个人层、不创建影子库，不从别的会话带入能力或偏好。当前会话临时诊断仍标明未知，不能把“不建档”解释为“用户不会”或“已完成长期掌握验证”。
+
+v0.1.3 改的是入口授权协议，不迁移或改写 v0.1.1 / v0.1.2 合成 seed 的身份、账本和历史证据；Skill 发布版本与 seed_version 是不同含义。
+
 ## 四层模型
 
 1. `domain`：领域知识点和有类型、有方向的关系；
@@ -8,6 +16,29 @@
 4. `intervention`：教学活动、资源、路径和预计成本。
 
 同一个知识点只建一个领域节点。每位学习者对它的掌握情况放在独立的 `state` 节点中。
+
+## v0.1.2 图谱覆盖与教学衔接
+
+合成 Demo manifest 的可选 `seed_version` 只选择代码内固定白名单的可信 seed；缺失按旧 `0.1.1`，新版为 `0.1.2`，未知值拒绝。版本不得替代账本精确前缀比对，也不能指定任意信任文件。此字段不用于真实用户证据的质量判断。
+
+concept 增加两个可选、向后兼容字段：
+
+- `prerequisite_coverage: complete | incomplete | unassessed`：当前目标依赖是否审核完整。新建节点显式写；省略时仅作为 `legacy_unspecified` 兼容旧路线，不能声称完整。
+- `required_contrast_ids: [concept_id, ...]`：无重复的 `contrasts_with` 子集，默认空。只控制必要区分对象和 inner_fringe，不替代 requires，也不改变 mastery contract。
+
+边界派生对象含 `graph_status / learner_status / boundary_position / next_action / reason_codes / blocking_prerequisite_ids / diagnostic_concept_ids / graph_issue_ids / required_contrast_gap_ids / transitive_unknown_ids`。消费者分别是路线资格、局部诊断、补图谱、教学对比和 inspect 审计，不新增未经校准的掌握概率。`defer_unmodeled` 不发用户诊断题；已独立掌握的前置可截止教学阻断，完整链仍用于审计。
+
+`uc-teaching-brief/0.1` 是只读、短生命周期的 Agent 投影，不是新事实存储。它从当前合同、真实 resolution 和同范围证据产生 known anchors、目标能力、必要对比、待落地术语、活动、反馈与成本。成本逐维标 `observed / estimated` 并携带来源，只有已有过程证据的 practice_feedback 标实测；未知原始候选成本仍遵守原有 unresolved 规则。新教学输入增加 `teaching_basis`，用于签发时核对；不写入用户 delivery_plan，不修改旧 teaching_delivery schema。
+
+`teaching_basis` 的精确字段为 `anchor_ids / focus_capabilities / route_binding_id / decision_fingerprint / brief_fingerprint`。后三个绑定值由当前简报复制，锚点与能力来自其可用集合；`source_revision` 是同范围当前 state/evidence 的派生摘要，进入 brief_fingerprint 使新证据失效旧草稿。它不是跨系统真实性证明。`routing_action` 来自边界资格，`process_next_action` 来自教学过程，两者分开以免用修复建议取代应先进行的诊断。
+
+简报与签发保留已落地的活动、媒介及 `resolved_at` 决策时点，简报以 `decision_as_of` 标明该时点；它不是全部当前事实的统一截点。锚点与 `source_revision` 读取当前 canonical 证据，过程状态、反馈和成本读取最新已提交结果。过程反馈更新不会暗中更换方法；需要换方法时显式 `resolve-teaching`，再重新准备简报与讲解草稿。
+
+### v0.1.4 正文概念检查
+
+简报新增 `concept_inventory: [{concept_id, title, aliases}]`，仅包含当前概念及其本步 requires/related_to/contrasts_with 和必要对比对象。唯一消费者是最终教学正文的概念覆盖/依赖检查，不用于增加先修或计算能力、兴趣、Focus。名称与别名进入 brief_fingerprint 和保护内容扫描；改名或增删别名会使旧草稿绑定失效。旧 state、发行、seed 和用户数据无需迁移。
+
+`terms_to_ground` 保留路线已要求的原名术语；新稿可补 `term_grounding`，只改变投影内容，不改变已存教学决策。生产审查使用当前简报词表及通过教学依据校验的锚点集合。会话内审查的 `verified_concept_ids` 由 Agent 从已授权证据提取，不是脚本签名或独立证据；不能自填“已知”消除未知。仅提过、讲过、有理解表现三者分开处理，不新增未经证据支持的 mastery 状态。只读/无个人数据分支的这些材料仅停留在内存。
 
 ## 节点类型
 
@@ -165,7 +196,7 @@ C = (diagnosis, prerequisites, core_learning,
 - `supported_by` 按 evidence ID 去重；重复链接同一条证据不能增加最低证据数。
 - 当前合同下较新的失败证据优先于较旧的通过证据；先后顺序必须把带时区 ISO 时间归一为 UTC 绝对时刻再比较，不能按字符串排序。只有时间上更新、同范围且重新满足合同的行为证据才能恢复 `met`。
 - `observed_at`、`teaching_delivery.issued_at`、`state.evaluated_at` 与 `intervention.resolved_at` 不得位于当前校验时刻之后（只允许实现声明的小时钟偏差）；合同、诊断快照、边界与 open-verification 都以明确 `as_of` 过滤未来记录。state 的 `evaluated_at` 不得早于它引用的最新有效 evidence。
-- 每条验证证据分别记录实际被资格门、合同、反馈或活动选择读取的 `response_correct`、`explanation_quality`、`assistance_level` 与 `observed_at`；答案正确但理由错误时标为 `conflicted` 或 misconception。Demo v0.1.1 不持久化尚无执行下游的 `representation` 或 `learner_confidence`；未来只有先实现明确消费者后才能新增相应字段 binding。
+- 每条验证证据分别记录实际被资格门、合同、反馈或活动选择读取的 `response_correct`、`explanation_quality`、`assistance_level` 与 `observed_at`；答案正确但理由错误时标为 `conflicted` 或 misconception。当前 Demo 不持久化尚无执行下游的 `representation` 或 `learner_confidence`；未来只有先实现明确消费者后才能新增相应字段 binding。
 - `immediate_performance`、数值型 `near_transfer` 与数值型 `delayed_retention` 必须在 0..1；自报努力采用 1..7 或 `not_collected`。`demonstrates` 不能替代观测字段：声明 explanation 时，合格 pass 证据必须同时有 `explanation_quality: pass`；声明迁移或保持时必须有相应合法数值与延迟天数。
 - 状态快照记录 `as_of`、`last_independent_evidence_at`、`valid_context`、`immediate_contract_status`、`contract_status` 与 `retention_status`；这些时间必须从其所引用 evidence 的时间推导。超出合同时间跨度或出现新冲突时，保留旧证据，但将当前结论降为 provisional 并局部复测。
 - 跨领域证据只能生成 `transfer_hypothesis`，不得直接更新目标领域 mastery。

@@ -17,14 +17,14 @@ retention_status: "not_started"
 next_action: "collect_immediate_verification"
 valid_context: "当前目标"
 as_of: null
-evaluated_at: "2026-08-28T03:24:07Z"
+evaluated_at: "2026-09-03T11:16:49Z"
 last_independent_evidence_at: null
 boundary_derived_at: null
 last_assessed_at: null
 misconception_flags: []
 diagnostic_snapshot: null
-created_at: "2026-08-28T03:24:07Z"
-updated_at: "2026-08-28T03:24:07Z"
+created_at: "2026-09-03T11:16:49Z"
+updated_at: "2026-09-03T11:16:49Z"
 privacy: "private"
 tags: ["uc/state", "uc/state/unknown"]
 ---

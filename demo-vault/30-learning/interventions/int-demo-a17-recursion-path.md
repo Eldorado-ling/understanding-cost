@@ -25,8 +25,8 @@ return_checkpoint: null
 recovery_status: "original"
 recovered_from: []
 path: ["kc-python-call-stack", "kc-python-recursion", "kc-python-base-case", "kc-python-stack-overflow"]
-created_at: "2026-08-28T03:24:07Z"
-updated_at: "2026-08-28T03:24:07.841098Z"
+created_at: "2026-09-03T11:16:49Z"
+updated_at: "2026-09-03T11:16:49.514778Z"
 privacy: "private"
 tags: ["uc/intervention"]
 teaching_resolution_schema: "uc-active-teaching-resolution/0.2"
@@ -51,9 +51,9 @@ resolved_max_observed_assistance_level: "A1"
 resolved_process_support_load: "high"
 resolved_route_binding_id: "rb-demo-a17-call-stack-current-v1"
 resolved_context_key: "domain=python|knowledge_kind=causal_structure|target_performance=explain|prior_band=partial|task_difficulty=medium"
-resolved_at: "2026-08-28T03:24:07.841098Z"
-process_refreshed_at: "2026-08-28T03:24:07.841098Z"
-resolved_decision_fingerprint: "86a2dac6733df7094a6d9f366451d9884c7dceabf68158a266dbad5e15c68231"
+resolved_at: "2026-09-03T11:16:49.514778Z"
+process_refreshed_at: "2026-09-03T11:16:49.514778Z"
+resolved_decision_fingerprint: "704d8fe2239f6ff4063b0932981de4651f1268101ad3d0f6924810cf35808505"
 ---
 
 # 递归与栈溢出最小学习路径

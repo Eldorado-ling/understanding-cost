@@ -17,14 +17,14 @@ retention_status: "passed_7d"
 next_action: "none"
 valid_context: "Python 基础函数调用"
 as_of: "2026-08-26T06:00:00Z"
-evaluated_at: "2026-08-28T03:24:07Z"
+evaluated_at: "2026-09-03T11:16:49Z"
 last_independent_evidence_at: "2026-08-26T06:00:00Z"
 boundary_derived_at: "2026-08-26T06:00:00Z"
 last_assessed_at: "2026-08-26T06:00:00Z"
 misconception_flags: []
 diagnostic_snapshot: null
-created_at: "2026-08-28T03:24:07Z"
-updated_at: "2026-08-28T03:24:07Z"
+created_at: "2026-09-03T11:16:49Z"
+updated_at: "2026-09-03T11:16:49Z"
 privacy: "private"
 tags: ["uc/state", "uc/state/mastered"]
 ---

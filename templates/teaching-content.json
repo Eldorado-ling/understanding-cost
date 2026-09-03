@@ -1,0 +1,22 @@
+{
+  "teaching_basis": {
+    "route_binding_id": "$copy_from_current_brief",
+    "decision_fingerprint": "$copy_from_current_brief",
+    "brief_fingerprint": "$copy_from_current_brief",
+    "anchor_ids": [],
+    "focus_capabilities": ["$choose_from_brief_required_capabilities"]
+  },
+  "learning_objective": "$one_observable_goal",
+  "method_label": "$plain_language_activity_label",
+  "orientation": "$why_this_step_now",
+  "term_grounding": [],
+  "explanation": "$review_actual_prose_against_brief_concept_inventory_and_ground_new_dependencies_before_reasoning",
+  "example": "$different_example_not_the_reserved_verification_task",
+  "visual": null,
+  "learner_task": "$one_active_generation_task_without_answer",
+  "response_format": "$what_the_learner_should_return",
+  "feedback_rule": "$minimal_feedback_rule",
+  "verification_rule": "$explain_that_a_new_independent_task_follows",
+  "success_criteria": "$observable_success_criteria",
+  "next_step": null
+}

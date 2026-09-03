@@ -6,22 +6,77 @@
 
 核心 Vault 与测试脚本要求 Python 3.10 或更高版本，并只使用 Python 标准库。发布流程图还需要 Node.js/npm、`@mermaid-js/mermaid-cli@11.12.0` 与 Pillow；这些依赖只用于生成带水印的审阅图，不进入学习运行时。
 
+自 v0.1.3 起所有个人 Vault CLI（包括 validate）先经过三选一门。下例仅针对维护者明确选择的**合成 Demo**，不是为真实用户伪造授权；真实教学必须使用用户的实际消息引用与精确根目录。含写操作的示例应在独立的测试副本中运行，不把当前 Demo 或用户原库当作试验场。输入 JSON 与输出文件也应在被确认的数据根目录内。
+
 ```powershell
-py -3 -X utf8 scripts\vault_tool.py validate --vault demo-vault
-py -3 -X utf8 scripts\vault_tool.py issue-route --vault demo-vault --record <route-input.json>
-py -3 -X utf8 scripts\vault_tool.py resolve-teaching --vault demo-vault --dry-run
-py -3 -X utf8 scripts\vault_tool.py issue-teaching --vault demo-vault --content <delivery-content.json>
-py -3 -X utf8 scripts\vault_tool.py append-evidence --vault demo-vault --record <evidence-input.json>
-py -3 -X utf8 scripts\vault_tool.py open-verification --vault demo-vault --process-evidence-id <committed-id>
-py -3 -X utf8 scripts\vault_tool.py schedule-retention --vault demo-vault --record <retention-schedule.json>
-py -3 -X utf8 scripts\vault_tool.py open-delayed-verification --vault demo-vault --state-id <state-id>
-py -3 -X utf8 scripts\vault_tool.py inspect-cone --vault demo-vault
-py -3 -X utf8 scripts\self_test.py
-py -3 -X utf8 scripts\render_flowchart.py --input review-assets\understanding-cost-flow-v0.1.1.mmd --output review-assets\understanding-cost-flow-v0.1.1.png --config review-assets\puppeteer-config.json --scale 3
-py -3 -X utf8 scripts\check_release.py --root .
+py -3 -B -X utf8 scripts\vault_tool.py learning-entry
+$demoRoot = (Resolve-Path -LiteralPath 'demo-vault').Path
+$demoRead = @('--data-mode', 'use_existing', '--confirmation-ref', 'synthetic-fixture-review', '--data-root', $demoRoot)
+$demoWrite = $demoRead + @('--write-confirmation-ref', 'synthetic-fixture-mutation')
+py -3 -B -X utf8 scripts\vault_tool.py validate --vault $demoRoot @demoRead
+py -3 -B -X utf8 scripts\vault_tool.py resolve-teaching --vault $demoRoot --dry-run @demoRead
+py -3 -B -X utf8 scripts\vault_tool.py prepare-teaching --vault $demoRoot @demoRead
+py -3 -B -X utf8 scripts\vault_tool.py inspect-cone --vault $demoRoot @demoRead
+py -3 -B -X utf8 scripts\vault_tool.py issue-route --vault $demoRoot --record <root内route-input.json> @demoWrite
+py -3 -B -X utf8 scripts\vault_tool.py issue-teaching --vault $demoRoot --content <root内delivery-content.json> @demoWrite
+py -3 -B -X utf8 scripts\vault_tool.py append-evidence --vault $demoRoot --record <root内evidence-input.json> @demoWrite
+py -3 -B -X utf8 scripts\vault_tool.py open-verification --vault $demoRoot --process-evidence-id <committed-id> @demoRead
+py -3 -B -X utf8 scripts\vault_tool.py schedule-retention --vault $demoRoot --record <root内retention-schedule.json> @demoWrite
+py -3 -B -X utf8 scripts\vault_tool.py open-delayed-verification --vault $demoRoot --state-id <state-id> @demoWrite
+py -3 -B -X utf8 scripts\self_test.py
+py -3 -B -X utf8 -m unittest discover -s scripts -p "test_*.py"
+py -3 -B -X utf8 scripts\render_flowchart.py --input review-assets\understanding-cost-flow-v0.1.4.mmd --output review-assets\understanding-cost-flow-v0.1.4.png --config review-assets\puppeteer-config.json --scale 3
+py -3 -B -X utf8 scripts\check_release.py --root .
 ```
 
 macOS / Linux 使用 `python3`。预期 Vault 校验为 `status: ok`、`error_count: 0`、`warning_count: 0`，回归测试为 `status: ok`。
+
+流程图命令中的 `puppeteer-config.json` 是 Windows 默认 Chrome 安装位置的示例，仅用于维护者渲染图片。其他系统可省略 `--config` 使用 Mermaid CLI 自带的浏览器配置，或提供与本机浏览器位置相符的配置；学习运行时不依赖这个 Windows 路径。
+
+## v0.1.4 概念交接与正文检查
+
+- `prepare-teaching` 从当前图谱生成 `concept_inventory`，包含本步名称/别名；和已验证锚点、必需术语一起约束讲解。不是增加全图教学，也不改变 Focus 公式或路径算法。
+- 新 `issue-teaching` 在写入前检查实际白名单正文和定义依赖，不能用空 `introduced_terms` 绕过登记概念。草稿新发现的词直接补 `term_grounding`；必需术语仍按原名保留，新增定义只影响投影，不改历史教学决策。
+- `scripts/teaching_review.py` 是同一个纯函数检查的独立 stdin/stdout 入口，用于只读/无数据会话。输入来自本轮授权资料和证据，不用初始化 Vault；不是持久化签发、未见题防泄漏或掌握认证。
+- `test_meaning_guard.py` 覆盖占位/循环自称及正常短定义；`test_teaching_review.py` 覆盖正文漏项、定义中的隐藏依赖、别名、歧义、词边界、生产拒绝零写入、只读命令和内部字段隔离。程序通过仍须 Agent 审未登记概念与实质含义，并根据真实作答检查理解。
+- 合成试跑可在 PowerShell 执行下式。它只读取随包示例；真实临时教学应把当轮 JSON 直接经 stdin 传入，不把用户资料写到模板或旁路文件里。输出 `structural_pass` 不等于“用户已经懂了”。
+
+```powershell
+Get-Content -LiteralPath templates\teaching-review-session.json -Raw | py -3 -B -X utf8 scripts\teaching_review.py
+```
+
+旧 seed/历史 evidence/teaching_delivery 保留，不用改写历史内容来满足新签发检查。新概念的教学顺序、Agent 语义复核与三种事实的区分，见[文字协议](text-learning.md)；本次审阅入口见 [REVIEW-0.1.4](../review-assets/REVIEW-0.1.4.md)。
+
+## v0.1.3 入口变更与测试范围
+
+- `learning-entry` 无参数只给三选一；`no_personal_data` + 真实 `confirmation_ref` 只给当轮前提确认动作，不创建或打开 Vault。没有显式选择时不预选第三项。
+- `create_boundary / use_existing` 必须确认精确绝对 `data_root`；个人 CLI 的 `--vault` 必须精确匹配；拒绝相对路径、其他根目录以及可跳出范围的链接路径。授权不随文件位置存在而产生。
+- 既有库默认只读；writer 另需 `write_confirmation_ref`；不能用它对既有库 `init`。可用的只读调用不会更新数据库或导出画像，但部分旧函数仍使用系统临时目录中的外置事务锁；这不是全主机零写入保证。未选择和无个人数据分支在进锁之前拦截。
+- `--record / --content / --output` 必须位于已确认根目录内；不能只检查 Vault 路径，却让其他输入或输出越权。
+- 旧 `recover-route` 的父目录扫描不再可由学习 CLI 调用，改为请求精确位置。内部函数保留供合成测试/维护，不构成学习授权。
+- 创建边界、使用既有数据库、无个人数据学习的行为样例见 [入口演示](../templates/learning-entry-demo.md)。运行 `test_learning_entry.py` 验证入口的拒绝与权限边界；行为试跑另行验证 Agent 是否真的先提问、等待与最小诊断，不能用字符串测试代替教学效果。
+- `demo-vault` 和合成 seed 的历史版本保留 0.1.2；本次不更改历史作答、账本或证据以伪造真人数据模式选择。版本号 0.1.3 只属于新 Skill 发布。
+- CLI 新增参数是调用兼容性变化；旧脚本缺参数将被入口门拦截，必须补真实选择。确认引用由 Agent 提供，不是用户同意的外部签名；入口不控制所有宿主工具，也不能自动适配任意数据库。
+
+## v0.1.2 审阅与兼容边界
+
+本版在独立开发副本内维护，不自动同步原仓库或线上包。自带 `demo-vault` 使用 v0.1.2 合成 seed 重建，补齐可直接作答的诊断材料；这不是重建用户学习历史。`seed-demo` 新建的合成图谱显式声明审核过的 prerequisite coverage。旧 v0.1.1 记录仍通过固定版本 seed 的精确前缀校验，不手改历史证据或哈希来凑通过。
+
+可信合成 seed 只允许内置版本白名单：manifest 缺少 `seed_version` 时按旧 v0.1.1 校验，显式 `0.1.2` 按新版校验；未知版本拒绝。原始 v0.1.1 seed 保存在 `assets/demo-seed-v0.1.1.json`，新建 demo 使用 `assets/demo-seed.json`。这只提供合成 seed 前缀的外部对照，不能外推为本地追加事件的外部真实性证明，也不允许从 manifest 指定任意文件加载信任源。
+
+旧 Vault 的绑定材料不随 seed 更新被替换；遇到旧材料只有说明而没有题目，应停止发送该不完整任务，并按正常资源准备与路线签发流程创建完整的新材料。不得修改旧签发快照、题面或证据来冒充兼容。
+
+- 图谱不全与用户未知分开：`prerequisite_coverage` 控制建模门，`required_contrast_ids` 控制必要辨析，不冒充先修。
+- 核心一到核心二使用 `prepare-teaching`，返回同一已落地决策的简报；路由动作和过程动作分别读取。生成器不要打开原始验证资源。
+- 新教学内容使用[模板](../templates/teaching-content.json)。把当前简报的 `route_binding_id / decision_fingerprint / brief_fingerprint` 原样复制到 `teaching_basis`，再声明锚点与能力。新证据或路线变化使旧草稿失效；重新准备并审阅内容，不能只替换指纹强行重放旧内容。
+- 旧 teaching_delivery 无需迁移；新 `issue-teaching` 强制上述输入，旧调用者须补齐字段。该补丁增加输入校验，不能称为所有旧调用代码无需修改。
+- `source_revision` 用于使当前及附近同范围 state/evidence 变化失效旧简报，不是外部签名。字段声明和字面术语门不能自动证明自然语言的全部依赖，也不能检测所有语义改写泄漏。
+- 提前主动复习必须通过新学习任务的独立验证；原排期未到期、未开题时才追加新排期，保持旧记录。
+- 只引入同次请求的解析复用，不引入跨请求缓存、SQLite 或紧凑证据迁移。新请求和写后重建都重新读盘。
+
+可选性能复测：`py -3 -B -X utf8 scripts/test_snapshot_regression.py --benchmark`。它比较同次快照复用与消费时独立重读，逐项核对结果相等；测量的是本机耗时/解析次数，不是模型 Token，不能外推“几百文件就是容量上限”。
+
+主流程双边框在[详细流程](../review-assets/understanding-cost-detail-v0.1.4.mmd)与 workflow 对应章节展开。实现、两个图层与文字协议同时维护。
 
 生产锁默认最多等待 10 秒。只有故障注入或运维诊断才可临时设置 `UNDERSTANDING_COST_LOCK_TIMEOUT_SECONDS=0..60`；超时必须返回错误且 Vault 零变化，不能以关闭互斥作为恢复方式。
 
@@ -31,9 +86,11 @@ macOS / Linux 使用 `python3`。预期 Vault 校验为 `status: ok`、`error_co
 
 ## 流程图与协议同步
 
-[文字协议](workflow.md) 与 [v0.1.1 流程图源文件](../review-assets/understanding-cost-flow-v0.1.1.mmd) 是同一执行合同的文字版和图形版；[带 ELD 水印的审阅 PNG](../review-assets/understanding-cost-flow-v0.1.1.png) 必须由 `scripts/render_flowchart.py` 生成并嵌入 [SKILL.md](../SKILL.md)。不存在“实现优先”或“图只供参考”的关系。修改任一方时必须在同一变更中同步另一方，并运行以下一致性检查；任一状态、门、回路、回写语义、版本号或水印不一致时，该版本不得交付：
+[文字协议](workflow.md) 与 [v0.1.4 流程图源文件](../review-assets/understanding-cost-flow-v0.1.4.mmd) 是同一执行合同的文字版和图形版；[带 ELD 水印的审阅 PNG](../review-assets/understanding-cost-flow-v0.1.4.png) 必须由 `scripts/render_flowchart.py` 生成并嵌入 [SKILL.md](../SKILL.md)。不存在“实现优先”或“图只供参考”的关系。修改任一方时必须在同一变更中同步另一方，并运行以下一致性检查；任一状态、门、回路、回写语义、版本号或水印不一致时，该版本不得交付：
 
 - 每个计算或保存字段都有明确消费者；无消费者分支不得进入提交；
+- 用户未选择数据模式时停止；三模式路径与其读写范围一致，只读/无个人数据分支不得流入 Vault writer；
+- 两种教学执行分支在实际输出前都有正文概念检查和 Agent 语义复核；未登记词与含义充分性不冒充程序已验证，新模型先解释意义并等待回答，再按需进入公式；
 - 候选顺序固定为硬资格 → 路线层级 → 动作绑定 → 成本 Pareto → 用户明确成本优先维度（Demo 词典序）→ Focus；
 - Focus 不包含成本，只能排序剩余 active 候选；
 - residual Focus 使用 `uc-focus-snapshot/0.4`，必须精确匹配当前 `route_id + route_version + route-chain-head time_scope + decision_id batch`，并拒绝未来 `calculated_at`；
@@ -57,11 +114,10 @@ macOS / Linux 使用 `python3`。预期 Vault 校验为 `status: ok`、`error_co
 ## 路由恢复
 
 ```powershell
-py -3 -X utf8 scripts\vault_tool.py recover-route --start <可能包含 Vault 的目录>
-py -3 -X utf8 scripts\vault_tool.py recover-learning-route --vault <精确 Vault 路径>
+py -3 -X utf8 scripts\vault_tool.py recover-learning-route --vault <精确绝对Vault路径> --data-mode use_existing --confirmation-ref <实际用户消息引用> --data-root <同一精确绝对Vault路径>
 ```
 
-两个命令默认只读。未找到旧数据时不得自动创建新 Vault；多条活动路线或支线歧义必须让用户选择。
+该命令默认只读。未找到旧数据时不得自动创建新 Vault；多条活动路线或支线歧义必须让用户选择。缺少精确位置先询问用户，不运行旧的向父目录扫描命令。
 
 ## 当前边界
 

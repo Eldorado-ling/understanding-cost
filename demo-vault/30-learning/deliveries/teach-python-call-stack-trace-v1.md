@@ -22,8 +22,8 @@ delivery_plan_fingerprint: "543f706979c19c68e14849c7a8649eae2b9ef8a1e2c1310c18a8
 issued_at: "2026-08-26T06:19:00Z"
 source_kind: "synthetic_demo"
 source_ref_ids: ["assets/demo-seed.json"]
-created_at: "2026-08-28T03:24:07Z"
-updated_at: "2026-08-28T03:24:07Z"
+created_at: "2026-09-03T11:16:49Z"
+updated_at: "2026-09-03T11:16:49Z"
 privacy: "sensitive"
 tags: ["uc/teaching-delivery", "uc/append-only"]
 ---

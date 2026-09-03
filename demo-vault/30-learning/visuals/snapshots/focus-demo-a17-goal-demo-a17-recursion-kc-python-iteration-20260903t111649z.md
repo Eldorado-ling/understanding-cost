@@ -1,7 +1,7 @@
 ---
 schema: "uc-demo/0.2"
 focus_snapshot_contract: "uc-focus-snapshot/0.4"
-id: "focus-demo-a17-goal-demo-a17-recursion-kc-python-iteration-20260828t032407z"
+id: "focus-demo-a17-goal-demo-a17-recursion-kc-python-iteration-20260903t111649z"
 type: "focus_snapshot"
 title: "Focus：循环与迭代"
 learner_id: "demo-a17"
@@ -12,7 +12,7 @@ contract_id: "mc-python-iteration-baseline"
 contract_version: 1
 route_id: "route-demo-a17-recursion"
 route_version: 1
-time_scope: "route-chain-head:4c163cb83f028142320379d0331ec1871f5e1cf0023918e80f23f1b1270ad25a"
+time_scope: "route-chain-head:fb848b5b5a4b03aaed118b5e9e7268c20fe7141280d1c28689b436d819845655"
 decision_id: "dec-demo-a17-focus-inspect"
 goal_relevance: 0.45
 goal_relevance_status: "derived"
@@ -35,7 +35,7 @@ decision_role: "experimental_priority"
 input_evidence_ids: ["ev-demo-a17-002-baseline", "ev-demo-a17-002"]
 input_source_refs: ["ks-demo-a17-kc-python-iteration", "goal-demo-a17-recursion", "assets/demo-seed.json"]
 input_confidence: {"goal_relevance": "high", "interest_evidence": "low", "readiness": "medium"}
-calculated_at: "2026-08-28T03:24:07Z"
+calculated_at: "2026-09-03T11:16:49Z"
 validity: "valid"
 audience: "agent_internal"
 user_visibility: "hidden_by_default"
@@ -43,8 +43,8 @@ export_policy: "explicit_inspect_or_debug"
 authoritative: false
 derived: true
 rebuildable: true
-created_at: "2026-08-28T03:24:07Z"
-updated_at: "2026-08-28T03:24:07Z"
+created_at: "2026-09-03T11:16:49Z"
+updated_at: "2026-09-03T11:16:49Z"
 privacy: "private"
 tags: ["uc/focus", "uc/derived"]
 ---

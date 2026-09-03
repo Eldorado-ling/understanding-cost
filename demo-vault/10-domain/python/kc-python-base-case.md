@@ -9,8 +9,10 @@ difficulty: "intermediate"
 graph_x: 0.52
 graph_y: -0.28
 content_provenance: "synthetic_authored_demo"
-created_at: "2026-08-28T03:24:07Z"
-updated_at: "2026-08-28T03:24:07Z"
+prerequisite_coverage: "complete"
+required_contrast_ids: []
+created_at: "2026-09-03T11:16:49Z"
+updated_at: "2026-09-03T11:16:49Z"
 privacy: "shared"
 tags: ["uc/concept", "domain/python"]
 ---

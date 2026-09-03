@@ -268,7 +268,7 @@ def add_call_stack_resource(
             ],
             "diagnostic_probe": {
                 "id": f"probe-python-call-stack-{suffix}",
-                "prompt": f"诊断 {suffix}：写出一个两层调用的入栈与返回方向。",
+                "prompt": "诊断：写出一个两层调用的入栈与返回方向。",
                 "success_criteria": "独立区分入栈与返回方向。",
             },
             "verification_task": {
@@ -696,7 +696,7 @@ def append_demo_call_stack_process(
 ) -> dict:
     """Issue real teaching and append one raw process observation transactionally."""
 
-    ensure_local_learning_route(vault, suffix=evidence_id)
+    ensure_teachable_call_stack(vault, suffix=evidence_id)
     intervention_path = (
         vault / "30-learning/interventions/int-demo-a17-recursion-path.md"
     )
@@ -707,7 +707,7 @@ def append_demo_call_stack_process(
     content_path = vault / f".{evidence_id}-delivery-content.json"
     tool.atomic_write_text(
         content_path,
-        json.dumps(valid_delivery_content(), ensure_ascii=False),
+        json.dumps(valid_delivery_content(vault=vault), ensure_ascii=False),
     )
     issued = tool.issue_teaching_delivery(vault, content_path=content_path)
     if issuance_out is not None:
@@ -1932,8 +1932,9 @@ def decision_scope(decision: dict) -> dict:
     }
 
 
-def valid_delivery_content(**overrides):
+def valid_delivery_content(*, vault=None, **overrides):
     content = {
+        "teaching_basis": {"anchor_ids": [], "focus_capabilities": ["explanation"]},
         "learning_objective": "区分递归与循环",
         "method_label": "先比较，再独立判断",
         "orientation": "先看两个最小案例。",
@@ -1947,7 +1948,38 @@ def valid_delivery_content(**overrides):
         "next_step": None,
     }
     content.update(overrides)
+    if vault is not None:
+        brief = tool.prepare_teaching_brief(vault)
+        content["teaching_basis"].update({
+            field: brief[field]
+            for field in ("route_binding_id", "decision_fingerprint", "brief_fingerprint")
+        })
     return content
+
+
+def ensure_teachable_call_stack(vault: Path, *, suffix: str) -> None:
+    """Use canonical diagnostic evidence and a fresh route, never forge mastery."""
+    state, _body, errors = tool.parse_note(
+        vault / "20-learner/states/ks-demo-a17-kc-python-call-stack.md"
+    )
+    assert errors == [], errors
+    if state["mastery"] != "unknown":
+        ensure_local_learning_route(vault, suffix=suffix)
+        return
+    evidence_id = "ev-ready-diagnostic-" + hashlib.sha256(suffix.encode("utf-8")).hexdigest()[:12]
+    diagnostic, _issuance, _probe = call_stack_diagnostic_fixture(vault, evidence_id=evidence_id)
+    record = write_raw_evidence_record(
+        vault, diagnostic, evidence_id=evidence_id,
+        summary="教学测试先完成真实绑定诊断；返回方向存在已观察到的错误。",
+    )
+    committed = tool.append_evidence(vault, record_path=record)
+    assert committed["state_mastery"] == "none", committed
+    resource = add_call_stack_resource(
+        vault, suffix="ready-" + hashlib.sha256(suffix.encode("utf-8")).hexdigest()[:12],
+        duration_minutes=0.5,
+    )
+    issued = tool.issue_route(vault, record_path=write_learning_route_record(vault.parent, resource["id"]))
+    assert issued["routing_action"] == "teach_now", issued
 
 
 def test_text_hybrid_is_default_for_text_sufficient_learning() -> None:
@@ -5885,11 +5917,11 @@ def test_validator_rejects_one_second_future_evidence_state_and_issuance() -> No
     with tempfile.TemporaryDirectory(prefix="uc-demo-future-delivery-1s-") as temporary:
         root = Path(temporary)
         vault = seed(root)
-        ensure_local_learning_route(vault, suffix="future-delivery-1s")
+        ensure_teachable_call_stack(vault, suffix="future-delivery-1s")
         content_path = root / "future-delivery-content.json"
         tool.atomic_write_text(
             content_path,
-            json.dumps(valid_delivery_content(), ensure_ascii=False),
+            json.dumps(valid_delivery_content(vault=vault), ensure_ascii=False),
         )
         issued = tool.issue_teaching_delivery(vault, content_path=content_path)
         path = (
